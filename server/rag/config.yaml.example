@@ -1,0 +1,73 @@
+# AI三千问 - RAG 后端配置模板
+# 复制此文件为 config.yaml 并填入实际值
+# cp config.yaml.example config.yaml
+
+# 服务配置
+server:
+  host: "0.0.0.0"
+  port: 8800
+  reload: true
+
+# Embedding 模型配置
+embedding:
+  # 模式：local（本地免费 ONNX）或 remote（远程 API 如阿里云百炼）
+  mode: "local"
+  # 本地模型（mode=local 时生效）
+  model_name: "BAAI/bge-small-zh-v1.5"
+  # 向量维度（bge-small-zh-v1.5 = 512）
+  dimension: 512
+  # 批处理大小
+  batch_size: 8
+  # 远程 API（mode=remote 时生效）
+  remote_api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  remote_api_key: "sk-your-dashscope-api-key"
+  remote_model_name: "text-embedding-v4"
+
+# LLM 配置（DeepSeek 官方 API）
+llm:
+  api_base: "https://api.deepseek.com/v1"
+  api_key: "sk-your-deepseek-api-key"
+  model: "deepseek-v4-flash"
+  max_tokens: 2000
+  temperature: 0.7
+
+# 文本分块配置
+chunking:
+  chunk_size: 600          # 每块最大字符数
+  chunk_overlap: 100        # 块之间重叠字符数
+  separators:               # 分隔符（按优先级）
+    - "\n\n"
+    - "\n"
+    - "。"
+    - "！"
+    - "？"
+    - "；"
+    - "，"
+    - " "
+
+# 向量库配置
+vector_store:
+  persist_directory: "./vector_db"  # ChromaDB 持久化路径
+  top_k: 5                          # 每个问题的检索结果数
+  similarity_threshold: 0.3         # 相似度阈值
+
+# 知识库分类
+categories:
+  - name: "四柱八字"
+    slug: "bazi"
+    description: "渊海子平、三命通会、滴天髓等八字经典"
+  - name: "梅花易数"
+    slug: "meihua"
+    description: "梅花易数、周易相关"
+  - name: "六爻"
+    slug: "liuyao"
+    description: "卜筮正宗、增删卜易等六爻经典"
+  - name: "奇门遁甲"
+    slug: "qimen"
+    description: "奇门遁甲经典"
+  - name: "易经"
+    slug: "yijing"
+    description: "易经经典，全类型通用知识库"
+  - name: "通用术数"
+    slug: "general"
+    description: "通用命理、五行基础"

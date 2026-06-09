@@ -1,11 +1,21 @@
 # Sensitive config
 server/config.js
 
+# RAG sensitive config
+server/rag/config.yaml
+
 # Runtime data (user database, admin credentials, JWT secret)
 data/
 
+# RAG vector store data
+server/rag/vector_db/
+
 # Dependencies
 server/node_modules/
+server/rag/venv/
+
+# Books (downloaded separately, see README)
+server/data/books/
 
 # OS files
 .DS_Store
@@ -21,5 +31,6 @@ Thumbs.db
 # Backup files
 *.bak
 
-# RAG vector store data
-server/rag_chroma_db/
+# Byte-compiled Python
+__pycache__/
+*.pyc

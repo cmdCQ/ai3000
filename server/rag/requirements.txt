@@ -1,0 +1,22 @@
+# AI三千问 - RAG 后端依赖
+# ============================
+
+# Web 框架
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.3
+
+# 向量数据库
+chromadb==0.5.23
+
+# LLM + Embedding 调用（阿里云百炼兼容 OpenAI API）
+openai==1.57.4
+httpx==0.28.1
+
+# 文本处理
+tiktoken==0.8.0
+jieba==0.42.1
+
+# 工具
+pyyaml==6.0.2
+python-multipart==0.0.19

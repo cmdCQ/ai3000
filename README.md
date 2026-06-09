@@ -1,4 +1,4 @@
-# AI三千问
+# AI三千问/算卦解析
 
 > 作者：[CQ / 参群](https://github.com/cmdCQ/)
 
@@ -9,176 +9,360 @@
 ## 功能
 
 - 🔮 **梅花易数** — 数字起卦、AI 智能解卦（含古籍引用）
-- ⚛ **六爻** — 摇卦、纳甲排盘、AI 智能解卦
-- 🤖 **AI 解析** — 基于 DeepSeek v4 Flash 模型，流式输出结果
+- ⚛ **六爻** — 铜钱摇卦、纳甲排盘、AI 智能解卦
+- 🤖 **AI 解析** — 基于 DeepSeek API，流式输出结果
 - 📚 **RAG 知识库** — 向量检索古籍原文，AI 分析有据可依
 - 👤 **用户系统** — 手机号注册登录、Token 额度管理
-- 🔧 **管理后台** — 仪表盘、用户管理、占卜记录、书籍管理
+- 🔧 **管理后台** — 用户管理、命盘管理、书籍入库管理
+- 🧠 **本地向量检索** — 使用 BAAI/bge-small-zh-v1.5 本地 embedding 模型，免费无需 API
 
 ## 技术栈
 
-| 层       | 技术                          |
-| -------- | ----------------------------- |
-| 前端     | 原生 HTML/CSS/JS，暗调新中式  |
-| 后端     | Node.js (原生 http 模块)      |
-| 数据库   | MySQL                         |
-| AI 模型  | DeepSeek v4 Flash (流式输出)  |
-| 知识库   | 本地向量检索引擎 (RAG)        |
-| 排盘引擎 | lunar-javascript              |
+| 层       | 技术                      |
+| -------- | ------------------------- |
+| 前端     | 原生 HTML/CSS/JS          |
+| 后端     | Node.js (原生 http 模块)  |
+| 数据库   | MySQL                     |
+| AI 模型  | DeepSeek API（流式输出）  |
+| 知识库   | ChromaDB + 本地 Embedding |
+| 排盘引擎 | lunar-javascript          |
 
 ---
+<<<<<<< Updated upstream
+
+## 快速开始
+=======
+>>>>>>> Stashed changes
 
 ## 快速开始
 
-### 1. 安装依赖
+### 环境要求
+
+- **Node.js** ≥ 18.0（[下载](https://nodejs.org/)）
+- **Python** ≥ 3.10
+- **MySQL** ≥ 8.0（或 MariaDB ≥ 10.5）
+- **系统**：Linux / macOS / Windows WSL
+
+### 一键安装
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/cmdCQ/ai3000.git
+cd ai3000
+
+# 2. 运行安装向导
+bash setup.sh
+```
+
+安装向导会自动完成依赖安装、数据库初始化、RAG 服务配置等步骤。
+
+### 手动安装
+
+#### 第一步：安装后端依赖
 
 ```bash
 cd server
 npm install
 ```
 
-### 2. 配置
+#### 第二步：配置 MySQL 数据库
 
-复制配置模板并填入实际值：
+```bash
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 导入表结构
+mysql -u root -p ai3000 < server/schema.sql
+```
+
+> `schema.sql` 会创建 6 张表：`users`（用户）、`charts`（命盘）、`mhys_records`（梅花易数记录）、`liuyao_records`（六爻记录）、`reference_books`（参考书籍）、`suggestions`（用户建议）。
+
+#### 第三步：配置后端
 
 ```bash
 cp server/config.example.js server/config.js
 ```
 
+<<<<<<< Updated upstream
 编辑 `server/config.js`，填入各项配置（见下方说明）。
-
-### 3. 初始化数据库
-
-MySQL 中创建 `ai3000` 数据库，并导入建表语句（如 `server/schema.sql` 存在的话）。
-
-### 4. 启动
-
-**后端服务：**
-
-```bash
-cd server
-node auth-server.js
-```
-
-**RAG 知识库服务（可选，需 Python3）：**
-
-```bash
-cd server
-pip install -r requirements.txt
-python3 rag-server.py
-```
-
-### 5. 访问
-
-浏览器打开 `http://localhost:3301`（或你配置的端口）。
-
----
-
-## 🔐 管理员使用教程
-
-### 1. 设置管理员密码
-
-管理员账号密码在 `server/config.js` 中配置：
+=======
+编辑 `server/config.js`，填入以下信息：
+>>>>>>> Stashed changes
 
 ```js
-// server/config.js
 module.exports = {
-  // ...其他配置...
-
-  // 管理员账号
-  admin: {
-    username: 'admin',       // ← 管理员用户名（可自己改）
-    password: 'your_admin_password',  // ← 修改这个密码！
+  deepseek: {
+    apiKey: 'sk-你的DeepSeekAPIKey',     // ⚠️ 必填
+    baseURL: 'https://api.deepseek.com/v1',
   },
-
-  // 服务器端口
+  mysql: {
+    host: 'localhost',
+    user: '数据库用户名',                   // ⚠️ 必填
+    password: '数据库密码',
+    database: 'ai3000',
+  },
+  admin: {
+    password: '管理员密码',                 // ⚠️ 必填
+  },
   port: 3301,
+  // 阿里云短信（选填，手机号登录用）
+  alibaba: { /* ... */ },
+  jwtSecret: '随意填一个随机字符串',
 };
 ```
 
-> ⚠️ **首次部署务必修改默认密码！** 建议使用 8 位以上、包含大小写字母和数字的强密码。
-
-配置保存后，重启后端服务即可生效：
+#### 第四步：配置 RAG 向量知识库
 
 ```bash
-# 重启后端
+cd server/rag
+cp config.yaml.example config.yaml
+```
+
+编辑 `server/rag/config.yaml`，填入：
+
+```yaml
+# DeepSeek API Key（与上面保持一致）
+llm:
+  api_key: "sk-你的DeepSeekAPIKey"
+
+# Embedding 模式推荐用 local（免费本地 ONNX 模型）
+# 如果服务器性能较差，可改为 remote 使用阿里云百炼 API
+embedding:
+  mode: "local"           # local = 免费本地模型
+  model_name: "BAAI/bge-small-zh-v1.5"
+  dimension: 512
+```
+
+##### 关于 Embedding 模型的说明
+
+| 模式 | 优点 | 缺点 | 适用场景 |
+|------|------|------|----------|
+| **local**（推荐） | 免费，无 API 调用费用 | 首次加载需下载模型（~400MB），CPU 模式略慢 | 大多数用户 |
+| **remote** | 速度快，不占本地资源 | 需要阿里云百炼 API Key，有调用费用 | 服务器配置低或已使用阿里云 |
+
+**local 模式首次运行会自动下载 bge-small-zh-v1.5 模型**（约 400MB），仅在首次入库时下载一次，之后离线可用。
+
+**remote 模式** 需在 [阿里云百炼](https://bailian.console.aliyun.com/) 开通并获取 API Key，配置如下：
+
+```yaml
+embedding:
+  mode: "remote"
+  remote_api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  remote_api_key: "sk-你的阿里云百炼APIKey"
+  remote_model_name: "text-embedding-v4"
+```
+
+安装 Python 依赖：
+
+```bash
+# 推荐使用虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+#### 第五步：下载古籍文本
+
+古籍文本文件约 300+ 本，可从以下仓库获取（已整理为纯文本格式）：
+
+**🔗 古籍下载地址：https://github.com/garychowcmu/daizhigev20/tree/master/易藏**
+
+下载后解压到 `server/data/books/` 目录：
+
+```bash
+mkdir -p server/data/books
+# 将下载的古籍 .txt 文件放入 server/data/books/
+```
+
+#### 第六步：启动服务
+
+需要同时启动两个服务：
+
+**终端 1 — 主后端服务：**
+
+```bash
 cd server
 node auth-server.js
 ```
 
-### 2. 登录后台
+**终端 2 — RAG 知识库服务：**
 
-**后台地址：** `http://你的域名:端口/admin/`（例如 `http://localhost:3301/admin/`）
+```bash
+cd server/rag
+source venv/bin/activate
+python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8800 --reload
+```
 
-登录步骤：
+或使用启动脚本：
 
-1. 在浏览器打开 `/admin/` 路径
-2. 看到登录卡片后，输入你在 `config.js` 里设置的管理员用户名和密码
-3. 点击「进入后台」
+```bash
+cd server/rag && bash start.sh
+```
 
-> 💡 如果密码忘了，直接修改 `server/config.js` 中的 `admin.password`，然后重启服务即可重置。
+访问 **http://localhost:3301** 即可使用。
 
-### 3. 安全机制
+---
 
-后台内置了登录保护：
+## 古籍入库到 RAG 知识库
 
-- **登录失败锁定：** 连续多次输错密码，账户会被临时锁定，锁定期间无法登录
-- **管理员 Token 过期：** 登录后 Token 会过期，过期需重新登录
-- **数据隔离：** 管理员只能浏览数据，用户密码等敏感信息不暴露
-- **前端后端分离：** 管理员密码仅在 `config.js` 中存储，不会写入数据库
+服务启动后，通过管理后台将古籍入库到向量知识库：
 
-### 4. 后台功能说明
+1. 访问 **http://localhost:3301/admin/**，用管理员账号登录
+2. 点击「古籍管理」→「书籍入库」，选择要入库的书籍
+3. 系统会自动：文本分块 → 向量化 → 存储到 ChromaDB
+4. 入库完成后，AI 解析时会自动检索并引用古籍原文
 
-后台共 7 个功能模块：
+### 命令行批量入库
 
-| 模块 | 功能 |
+如果古籍文件很多，可以使用批量入库脚本：
+
+```bash
+cd server/rag
+source venv/bin/activate
+
+# 单文件入库
+python scripts/ingest.py ../data/books/渊海子平.txt --book "渊海子平" --category bazi
+
+# 查看参数帮助
+python scripts/ingest.py --help
+```
+
+可用的分类（category）：
+- `bazi` — 四柱八字
+- `meihua` — 梅花易数
+- `liuyao` — 六爻
+- `qimen` — 奇门遁甲
+- `yijing` — 易经（通用知识库）
+- `general` — 通用术数
+
+---
+
+## 管理后台使用指南
+
+### 1. 访问后台
+
+浏览器打开 `http://你的域名/admin/`。
+
+### 2. 登录
+
+默认管理员账号在 `server/config.js` 中配置：
+
+```js
+admin: {
+  password: '你设置的密码',  // 首次启动时以此密码初始化
+}
+```
+
+默认用户名：`CQA`（如需修改，直接编辑 `server/auth-server.js` 中 `defaultAdmin` 的 `username` 字段）
+
+### 3. 修改管理员密码
+
+登录后台后 → 点击右上角「系统设置」→ 点击「修改密码」，输入当前密码和新密码即可。
+
+### 4. 忘记管理员密码
+
+如果忘记了密码，可以：
+
+**方案一：删除数据文件重新初始化**
+```bash
+rm data/admin.json
+# 重启服务后自动用 config.js 中的密码重建
+```
+
+**方案二：手动重置**
+编辑 `data/admin.json`，将 `passwordHash` 字段置空或删掉，重启服务后自动用 `config.js` 中的密码重新初始化。
+
+### 5. 后台功能一览
+
+| 功能 | 说明 |
 |------|------|
-| 📊 **仪表盘** | 总用户数、今日新增、命盘总数、排卦总数、AI 解读次数、7 天活跃用户数 |
-| 👥 **用户管理** | 查看所有注册用户（手机号、注册时间、命盘数、Token 消耗、等级、活跃时间）、搜索用户 |
-| 📜 **命盘管理** | 按用户查看命盘（四柱八字/紫微斗数），支持搜索和查看详情 |
-| ☯ **占卜管理** | 梅花易数/六爻排盘记录，按用户查看起卦详情 |
-| 💬 **建议管理** | 用户提交的建议反馈列表 |
-| 📖 **参考书籍** | RAG 知识库书籍管理 — 查看/添加/编辑/删除书籍，支持分类筛选、全文存储、一键入库到向量检索服务 |
-| ⚙ **系统设置** | AI 模型选择（已接入的模型）、API 调用概况、系统运行状态 |
+| 📊 **仪表盘** | 总用户数、总命盘数、AI 解析统计 |
+| 👥 **用户管理** | 查看用户、修改等级、调整 Token 用量 |
+| 🔮 **命盘管理** | 查看所有排盘记录（八字/紫微斗数） |
+| 📋 **排盘记录** | 梅花易数/六爻记录，支持搜索和删除 |
+| 📖 **古籍管理** | 上传书籍 → 入库到 RAG 向量知识库 |
+| ✉️ **用户建议** | 查看用户反馈评分和内容 |
+| ⚙️ **系统设置** | 修改管理员密码、查看模型配置 |
 
-### 5. 常见的操作
+### 6. 用户等级说明
 
-#### 查看用户详情
-在「用户管理」tab 搜索或浏览用户列表，可以看到每个用户的注册时间、命盘数量、AI 调用次数、Token 消耗等完整数据。
+| 等级 | 名称 | Token 限额 |
+|------|------|-----------|
+| 0 | 普通用户 | 100,000 Token（约 66 次解析） |
+| 1 | 普通会员 | 5,000,000 Token |
+| 2 | SVIP | 无限 |
 
-#### 管理占卜记录
-在「占卜管理」tab，按用户查看其梅花易数/六爻排盘记录，点开详情可看到起卦时间、占卜事项等信息。
+在后台「用户管理」中，点击每行右侧的等级下拉框即可修改。
 
-#### 管理知识库书籍
-在「参考书籍」tab：
-- **添加书籍：** 点「+ 添加书籍」，填写书名、分类、作者、全文内容后保存
-- **编辑书籍：** 点击书籍行修改元数据或内容
-- **分类筛选：** 按四柱八字、紫微斗数、梅花易数、六爻、奇门遁甲、易经、风水等分类过滤
-- **批量入库：** 点击「📥 全部入库」将所有书籍内容向量化到 RAG 知识库，AI 解卦时就能引用这些古籍原文
+### 7. 调整用户 Token 用量
+
+在后台「用户管理」中，点击每行右侧的 **Token** 按钮，输入新数值即可。
 
 ---
 
 ## 项目结构
 
 ```
-├── server/                # 后端
-│   ├── auth-server.js     # 主服务（API + AI 流式调用）
-│   ├── rag-server.py      # RAG 向量检索服务
-│   ├── config.example.js  # 配置模板（占位值）
-│   └── config.js          # 实际配置（已 gitignore）
-├── admin/                 # 管理后台
-├── my/                    # "我的"页面
-├── mhys/                  # 梅花易数
-├── liuyao/                # 六爻
-├── login/                 # 登录页
-├── register/              # 注册页
-├── charts/                # 命盘（八字/紫微斗数）
-├── js/                    # 公共 JS
-├── css/                   # 公共 CSS
-├── assets/                # 静态资源
-├── data/                  # 运行时数据（已 gitignore）
-└── .gitignore             # 忽略敏感文件
+├── server/                  # 后端
+│   ├── auth-server.js       # 主服务（API + AI 流式调用）
+│   ├── config.example.js    # 配置模板
+│   ├── config.js            # 实际配置（已 gitignore）
+│   ├── schema.sql           # MySQL 建表语句
+│   ├── rag/                 # RAG 向量知识库服务
+│   │   ├── config.yaml.example  # RAG 配置模板
+│   │   ├── config.yaml          # 实际配置（已 gitignore）
+│   │   ├── requirements.txt     # Python 依赖
+│   │   ├── start.sh             # 启动脚本
+│   │   ├── src/                 # 源码
+│   │   │   ├── main.py          # FastAPI 服务入口
+│   │   │   ├── chunker.py       # 文本分块器
+│   │   │   ├── embedder.py      # 向量嵌入器（本地/远程）
+│   │   │   ├── vector_store.py  # ChromaDB 向量存储
+│   │   │   ├── rag_pipeline.py  # RAG 检索增强生成
+│   │   │   └── models.py        # 数据模型（Pydantic）
+│   │   ├── scripts/
+│   │   │   ├── ingest.py        # 命令行入库工具
+│   │   │   └── batch_ingest.py  # MySQL 批量入库
+│   │   └── vector_db/           # ChromaDB 持久化数据（运行时生成）
+│   └── data/books/              # 古籍文本文件（需自行下载）
+├── my/                      # "我的"页面
+├── mhys/                    # 梅花易数
+├── liuyao/                  # 六爻
+├── admin/                   # 管理后台
+├── js/                      # 公共 JS
+├── css/                     # 公共 CSS
+├── charts/                  # 命盘（八字/紫微斗数）
+├── data/                    # 运行时数据（已 gitignore）
+├── setup.sh                 # 一键安装脚本
+└── README.md
 ```
+
+## 常见问题
+
+### Q: RAG 服务无法启动？
+
+**A:** 确保已安装所有 Python 依赖：
+```bash
+cd server/rag
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Q: 本地 embedding 模型下载失败？
+
+**A:** bge-small-zh-v1.5 首次运行时会自动下载到 `~/.cache/huggingface/`。如果下载慢，可以手动下载模型文件后放到缓存目录，或切换到 remote 模式使用阿里云 API。
+
+### Q: 古籍入库后 AI 解析没有引用古籍？
+
+**A:** 检查：
+1. RAG 服务是否在运行（`http://localhost:8800/health` 应返回 ok）
+2. 书籍是否已入库（管理后台古籍管理查看状态）
+3. `server/config.js` 中的 DeepSeek API Key 是否正确
+
+### Q: 手机验证码登录怎么配置？
+
+**A:** 需要在 `server/config.js` 中配置阿里云短信服务。如果不想配置，可以在数据库中直接为用户设置密码，通过用户名+密码登录。
 
 ## License
 
