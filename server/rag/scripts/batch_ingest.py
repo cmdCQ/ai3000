@@ -24,12 +24,13 @@ config_path = PROJECT_ROOT / "config.yaml"
 with open(config_path, "r") as f:
     config = yaml.safe_load(f)
 
-# MySQL root 用户使用 auth_socket 插件，需通过 unix_socket 连接
+# MySQL 连接配置（优先使用环境变量，否则用默认值）
 DB_CONFIG = {
-    "unix_socket": "/var/run/mysqld/mysqld.sock",
-    "user": "root",
-    "password": "",
-    "database": "ai3000",
+    "host": os.environ.get("MYSQL_HOST", "localhost"),
+    "port": int(os.environ.get("MYSQL_PORT", "3306")),
+    "user": os.environ.get("MYSQL_USER", "root"),
+    "password": os.environ.get("MYSQL_PASSWORD", ""),
+    "database": os.environ.get("MYSQL_DATABASE", "ai3000"),
     "charset": "utf8mb4",
 }
 
