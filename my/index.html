@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的 · AI三千问</title>
+<link rel="stylesheet" href="/css/auth.css?v=1780920000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #b8960a;
+  --bg-page: #faf8f5;
+  --border-warm: #e8e3d8;
+}
+
+.my-wrapper {
+  display: flex; flex-direction: column;
+  min-height: 100vh; min-height: 100dvh;
+  padding-bottom: 4rem;
+  background: var(--bg-page);
+}
+
+.my-header {
+  text-align: center;
+  padding: 2.2rem 1.5rem 0.8rem;
+}
+
+.my-header h1 {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.35rem; font-weight: 600;
+  letter-spacing: 0.08em; color: #1a1a1a;
+}
+
+.my-header .my-sub {
+  font-family: "Noto Serif SC", serif;
+  font-size: 0.8rem; color: #1a1a1a;
+  letter-spacing: 0.04em;
+}
+
+.my-content {
+  flex: 1; padding: 0 1.5rem;
+  max-width: 380px; margin: 0 auto; width: 100%;
+}
+
+/* 引导卡片 */
+.my-guest { text-align: center; padding: 2.5rem 1rem; }
+
+.my-guest .guest-icon {
+  font-size: 2.4rem; margin-bottom: 0.5rem; opacity: 0.35;
+}
+
+.my-guest .guest-title {
+  font-size: 0.95rem; font-weight: 500;
+  color: #1a1a1a; margin-bottom: 0.15rem;
+}
+
+.my-guest .guest-desc {
+  font-size: 0.78rem; color: #888; margin-bottom: 1.2rem;
+}
+
+.my-guest .guest-btns {
+  display: flex; gap: 0.6rem; justify-content: center;
+}
+
+.guest-btn {
+  padding: 0.5rem 1.5rem; font-size: 0.82rem;
+  font-family: inherit; border-radius: 14px;
+  cursor: pointer; text-decoration: none;
+  letter-spacing: 0.04em; font-weight: 500;
+  transition: opacity 0.2s; display: inline-block;
+}
+
+.guest-btn.primary {
+  color: #fff;
+  background: var(--gold);
+  border: none;
+  box-shadow: 0 2px 8px rgba(184,150,10,0.25);
+}
+.guest-btn.primary:hover { opacity: 0.85; }
+
+.guest-btn.secondary {
+  color: #1a1a1a; background: transparent;
+  border: 1px solid var(--border-warm);
+}
+.guest-btn.secondary:hover { border-color: #b8960a; }
+
+/* 信息卡片 */
+.my-card {
+  background: #fff;
+  border: 1px solid var(--border-warm);
+  border-left: 3px solid var(--gold);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  padding: 1rem 1.1rem; margin-bottom: 0.6rem;
+  transition: all 0.2s;
+}
+
+.my-card.clickable { cursor: pointer; }
+.my-card.clickable:hover {
+  border-color: #d4c9b0;
+  background: #faf8f5;
+}
+
+.my-card-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 0.72rem; font-weight: 500;
+  color: #1a1a1a; letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+.my-card-body {
+  display: flex; flex-direction: column; gap: 0.25rem;
+}
+
+.my-info-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.my-info-label {
+  color: #888; font-size: 0.72rem; min-width: 3em;
+}
+
+.my-info-value { font-family: "Noto Serif SC", serif; color: #1a1a1a; }
+
+.my-card-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: "Noto Serif SC", serif;
+  font-size: 0.82rem; color: #1a1a1a;
+}
+
+.my-card-row .arrow { color: #bbb; font-size: 0.9rem; }
+
+/* 退出按钮 */
+.my-card.danger {
+  cursor: pointer; border-color: var(--border-warm);
+}
+.my-card.danger:hover {
+  border-color: #d4c9b0; background: #faf8f5;
+}
+.my-card.danger .my-card-row { color: #1a1a1a; }
+
+/* 设置页返回 */
+.my-back-link {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.78rem; color: #bbb; text-decoration: none;
+  margin-bottom: 0.8rem; transition: color 0.2s;
+}
+.my-back-link:hover { color: #666; }
+
+/* 底部导航 */
+.my-bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  display: flex;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-warm);
+  padding: 0.5rem 0 0.4rem;
+  padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+}
+
+.my-nav-item {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  padding: 0.5rem; font-family: inherit;
+  font-size: 0.82rem; letter-spacing: 0.06em; font-weight: 400;
+  color: #aaa; text-decoration: none;
+  transition: color 0.2s; position: relative;
+}
+
+.my-nav-item.active { color: #1a1a1a; }
+.my-nav-item.active::after {
+  content: ''; position: absolute; bottom: -0.2rem;
+  left: 50%; transform: translateX(-50%);
+  width: 1.2rem; height: 3px;
+  background: var(--gold); border-radius: 1px;
+}
+.my-nav-item:not(.active):hover { color: #888; }
+</style>
+</head>
+<body>
+
+<div class="my-wrapper">
+  <div class="my-header">
+    <h1>我的</h1>
+    <p class="my-sub">AI 三千问</p>
+  </div>
+
+  <div class="my-content" id="myContent">
+    <div style="text-align:center;padding:3rem 0;color:#bbb;font-size:0.82rem;">加载中…</div>
+  </div>
+</div>
+
+<nav class="my-bottom-nav">
+  <a class="my-nav-item" href="/">命理与术数</a>
+  <a class="my-nav-item" href="/my-charts/">我的命盘</a>
+  <span class="my-nav-item active">我的</span>
+</nav>
+
+<script>
+(function() {
+  'use strict';
+
+  function getUser() {
+    var m = document.cookie.match(new RegExp('(^| )sqw_username=([^;]+)'));
+    return m ? decodeURIComponent(m[2]) : null;
+  }
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  window.loadMain = function() {
+    var u = getUser();
+    var el = document.getElementById('myContent');
+
+    if (!u) {
+      el.innerHTML =
+        '<div class="my-guest">' +
+          '<div class="guest-icon">👤</div>' +
+          '<p class="guest-title">登录账号</p>' +
+          '<p class="guest-desc">登录后使用全部功能</p>' +
+          '<div class="guest-btns">' +
+            '<a href="/login/" class="guest-btn primary">去登录</a>' +
+            '<a href="/register/" class="guest-btn secondary">注册</a>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    window.loadTokenUsage(function(data) {
+      if (!data) {
+        el.innerHTML =
+          '<div class="my-card" style="border-left-color:#bbb">' +
+            '<div class="my-card-title">👤 ' + esc(u) + '</div>' +
+            '<div class="my-card-body"><div style="font-size:0.75rem;color:#999;padding:0.3rem 0">加载失败</div></div>' +
+          '</div>' +
+          '<div class="my-card clickable" onclick="goSettings()">' +
+            '<div class="my-card-row">⚙️ 设置<span class="arrow">›</span></div>' +
+          '</div>';
+        return;
+      }
+
+      var tierNames = { 0:'普通用户', 1:'普通会员', 2:'SVIP' };
+      var tier = data.tier || 0;
+      var tierName = tierNames[tier] || '普通用户';
+      var tokenUsed = data.tokenUsed;
+      var tokenLimit = data.tokenLimit;
+
+      // 融合卡片：账户+等级+用量 在一张卡里
+      var limitText = tokenLimit === null ? '无限' : tokenLimit.toLocaleString();
+      var isUnlimited = tokenLimit === null;
+      var pct = isUnlimited ? 100 : Math.min(100, (tokenUsed / tokenLimit * 100));
+      var barColor = isUnlimited ? '#d4c9b0' : 'var(--gold)';
+      var progressHtml =
+        '<div style="margin-top:0.5rem;height:5px;background:#eee;border-radius:3px;overflow:hidden">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s"></div>' +
+        '</div>' +
+        '<div style="font-size:0.68rem;color:#999;text-align:right;margin-top:0.15rem">' + (isUnlimited ? '∞' : pct.toFixed(1) + '%') + '</div>';
+      var showLimitText = isUnlimited ? '（无限）' : 'Token 用量';
+      var remainCount = isUnlimited ? null : Math.floor((tokenLimit - tokenUsed) / 1500);
+
+      el.innerHTML =
+        '<div class="my-card" style="border-left-color:' + (tier === 2 ? '#b8960a' : tier === 1 ? '#8a8a8a' : '#bbb') + '">' +
+          '<div class="my-card-body" style="gap:0.3rem">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between">' +
+              '<span style="font-family:"Noto Serif SC",serif;font-size:0.88rem;font-weight:600;color:#1a1a1a">' + esc(u) + '</span>' +
+              '<span style="font-size:0.68rem;padding:0.12rem 0.5rem;border-radius:8px;background:' + (tier === 2 ? 'rgba(184,150,10,0.12)' : '#f5f4f0') + ';color:' + (tier === 2 ? '#b8960a' : '#888') + ';font-weight:500">' + tierName + '</span>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.15rem">' +
+              '<span style="font-size:0.72rem;color:#999">AI 解析用量</span>' +
+              '<span style="font-size:0.78rem;color:#1a1a1a">' + tokenUsed.toLocaleString() + '</span>' +
+              '<span style="font-size:0.72rem;color:#bbb">/</span>' +
+              '<span style="font-size:0.78rem;color:#1a1a1a">' + limitText + '</span>' +
+            '</div>' +
+            progressHtml +
+            '<div style="font-size:0.65rem;color:#bbb;margin-top:0.1rem">' + showLimitText + '</div>' +
+            (remainCount !== null ? '<div style="font-size:0.65rem;color:#bbb;margin-top:0.05rem">剩余AI解析次数还剩约 ' + remainCount.toLocaleString() + ' 次</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="my-card clickable" onclick="goSettings()">' +
+          '<div class="my-card-row">⚙️ 设置<span class="arrow">›</span></div>' +
+        '</div>';
+    });
+  };
+
+  window.loadTokenUsage = function(cb) {
+    var token = window.getToken();
+    if (!token) { cb(null); return; }
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/user/tokens');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+    xhr.onload = function() {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.tokenUsed !== undefined) {
+          cb({ tokenUsed: data.tokenUsed, tokenLimit: data.tokenLimit, tier: data.tier || 0 });
+        } else {
+          cb(null);
+        }
+      } catch(e) { cb(null); }
+    };
+    xhr.onerror = function() { cb(null); };
+    xhr.send();
+  };
+
+  window.getToken = function() {
+    var m = document.cookie.match(new RegExp('(^| )sqw_token=([^;]+)'));
+    return m ? decodeURIComponent(m[2]) : null;
+  };
+
+  window.goSettings = function() {
+    var el = document.getElementById('myContent');
+    el.innerHTML =
+      '<a href="#" class="my-back-link" onclick="window.loadMain();return false">← 返回</a>' +
+      '<div class="my-card" style="margin-top:0">' +
+        '<div class="my-card-title">⚙️ 设置</div>' +
+      '</div>' +
+      '<div class="my-card danger" onclick="doLogout()">' +
+        '<div class="my-card-row">退出账号<span class="arrow">›</span></div>' +
+      '</div>';
+  };
+
+  window.doLogout = function() {
+    if (confirm('确定退出登录吗？')) {
+      document.cookie = 'sqw_token=; path=/; max-age=0';
+      document.cookie = 'sqw_username=; path=/; max-age=0';
+      window.location.href = '/';
+    }
+  };
+
+  window.loadMain();
+})();
+</script>
+</body>
+</html>

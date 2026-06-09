@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI三千问</title>
+<link rel="stylesheet" href="/css/home.css?v=1780998525">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="home-wrapper">
+
+  <header class="home-header">
+    <div class="home-emblem">🏮</div>
+    <h1 class="home-title">AI 三千问</h1>
+    <p class="home-sub">问天 · 问命 · 问心</p>
+    <div class="home-rule"></div>
+  </header>
+
+  <!-- Tab 1: 命理与术数 -->
+  <div id="tab-modules" class="tab-content">
+    <!-- 建议入口 -->
+    <div style="text-align:center;margin:1.5rem 0 0.5rem;">
+      <a href="#" onclick="return handleSuggestionClick()" style="
+        display:inline-block;
+        font-size:0.78rem;
+        color:var(--accent-dim);
+        text-decoration:none;
+        padding:0.45rem 1.2rem;
+        border:1px dashed var(--border);
+        border-radius:20px;
+        letter-spacing:0.04em;
+        transition:all 0.2s ease;
+        cursor:pointer;
+      " onmouseover="this.style.borderColor='var(--border-active)';this.style.color='var(--accent)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--accent-dim)'">
+        💬 我们需要你宝贵的建议
+      </a>
+    </div>
+
+    <section class="home-section">
+      <div class="section-head">
+        <span class="cat">命理</span>
+        <span>命运推演 · 知命而行</span>
+      </div>
+      <div class="module-list">
+        <div class="module-card locked">
+          <span class="icon">🔮</span>
+          <span class="body">
+            <span class="name">紫微斗数</span>
+            <span class="desc">十四主星 · 十二宫 · 四化飞星</span>
+          </span>
+          <span class="badge">即将上线</span>
+        </div>
+        <div class="module-card locked">
+          <span class="icon">🏔️</span>
+          <span class="body"><span class="name">奇门遁甲</span><span class="desc">九宫 · 八门 · 九星 · 八神</span></span>
+          <span class="badge">即将上线</span>
+        </div>
+      </div>
+    </section>
+    <section class="home-section">
+      <div class="section-head">
+        <span class="cat">术数</span>
+        <span>即时占卜 · 问事而决</span>
+      </div>
+      <div class="module-list">
+        <div class="module-card active" onclick="window.location.href='/hexagrams/'">
+          <span class="icon">📖</span>
+          <span class="body"><span class="name">六十四卦</span><span class="desc">卦辞 · 爻辞 · 象传 · 详解</span></span>
+        </div>
+        <div class="module-card active" onclick="handleModuleClick('meihua')">
+          <span class="icon">🌸</span>
+          <span class="body"><span class="name">梅花易数</span><span class="desc">年月日时 · 万物类象</span></span>
+        </div>
+        <div class="module-card active" onclick="handleModuleClick('liuyao')">
+          <span class="icon">🪙</span>
+          <span class="body"><span class="name">六爻</span><span class="desc">铜钱起卦 · 六十四卦</span></span>
+        </div>
+        <div class="module-card locked">
+          <span class="icon">🏔️</span>
+          <span class="body"><span class="name">奇门遁甲</span><span class="desc">九宫 · 八门 · 九星 · 八神</span></span>
+          <span class="badge">即将上线</span>
+        </div>
+      </div>
+    </section>
+    <footer class="home-footer">
+      <div>AI三千问 · VibeCoding by CQ · 2026</div>
+      <div class="uptime-line">
+        <span>已稳定运行</span>
+        <span class="uptime-timer" id="uptimeTimer">--</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Tab 2: 我的命盘 — 已迁至独立页面 /my-charts/ -->
+  <div id="tab-charts" class="tab-content" style="display:none"></div>
+
+  <!-- Tab 3: 我的 -->
+  <div id="tab-profile" class="tab-content" style="display:none">
+    <div id="tab-profile-content"></div>
+  </div>
+
+</div>
+
+<!-- 底部悬浮导航栏 -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-tab="modules">
+    <span class="nav-label">命理与术数</span>
+  </button>
+  <button class="nav-item" onclick="location.href='/my-charts/'" style="cursor:pointer">
+    <span class="nav-label">我的命盘</span>
+  </button>
+  <button class="nav-item" onclick="location.href='/my/'" style="cursor:pointer">
+    <span class="nav-label">我的</span>
+  </button>
+</nav>
+
+<script src="/js/lunar.min.js"></script>
+<script src="/js/charts-store.js?v=4"></script>
+<script src="/js/auth.js?v=5"></script>
+<script>
+(function(){
+  var M=document.getElementById('tab-modules');
+  var P=document.getElementById('tab-profile');
+  var N=document.querySelectorAll('.nav-item');
+  var T='modules';
+
+  function getUser(){ var m=document.cookie.match(new RegExp('(^| )sqw_username=([^;]+)')); return m?decodeURIComponent(m[2]):null; }
+
+  function show(n){
+    M.style.display=n==='modules'?'block':'none';
+    C.style.display='none';
+    P.style.display=n==='profile'?'block':'none';
+  }
+
+  async function go(n){
+    if(n===T)return;T=n;show(n);
+    N.forEach(function(b){b.classList.toggle('active',b.dataset.tab===n);});
+    if(n==='profile')loadProfile();
+  }
+
+  N.forEach(function(b){b.addEventListener('click',function(){go(b.dataset.tab);});});
+
+  // 模块卡片点击：统一跳转到命盘选择页
+  window.handleModuleClick = async function(type) {
+    // 梅花易数无需登录即可使用
+    if (type === 'meihua') { window.location.href = '/mhys/'; return; }
+    if (type === 'liuyao') { window.location.href = '/liuyao/'; return; }
+    if (!AUTH.isLoggedIn()) { window.location.href = '/login/'; return; }
+    window.location.href = '/select-chart/?type=' + type;
+  };
+
+  // 命盘管理已迁至独立页面 /my-charts/
+
+  function loadProfile(){
+    var el=document.getElementById('tab-profile-content');
+    var u=getUser();
+    if(!u){
+      el.innerHTML='<div class="charts-guest"><div class="cg-icon">👤</div><p class="cg-title">登录账号</p><p class="cg-desc">登录后使用全部功能</p><div class="cg-btns"><a href="/login/" class="cg-btn cg-login">去登录</a><a href="/register/" class="cg-btn cg-register">注册</a></div></div>';
+      return;
+    }
+    el.innerHTML='<div class="card"><h3 class="card-title">👤 账户信息</h3><div class="info-row"><span class="info-label">手机号</span><span>'+esc(u)+'</span></div></div><div class="card" style="cursor:pointer" onclick="goSettings()"><div class="info-row"><span>⚙️ 设置</span><span style="margin-left:auto;color:var(--text-muted)">›</span></div></div>';
+  }
+
+  window.goSettings=function(){
+    var el=document.getElementById('tab-profile-content');
+    el.innerHTML='<div style="padding:0.5rem 0"><a class="back-link" href="#" onclick="goBackProfile();return false">← 返回</a></div><div class="card" style="margin-top:0.5rem"><h3 class="card-title">⚙️ 设置</h3></div><div class="card" style="cursor:pointer;color:#b85a5a" onclick="doLogout()"><div class="info-row"><span>退出账号</span><span style="margin-left:auto;color:var(--text-muted)">›</span></div></div>';
+  };
+
+  window.goBackProfile=function(){loadProfile();};
+
+  window.doLogout=function(){
+    if(confirm('确定退出登录吗？')){
+      document.cookie='sqw_token=; path=/; max-age=0';
+      document.cookie='sqw_username=; path=/; max-age=0';
+      window.location.href='/';
+    }
+  };
+
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+  // 建议入口：未登录跳登录，已登录跳建议页
+  window.handleSuggestionClick = function() {
+    var isLoggedIn = !!getCookie('sqw_username');
+    if (isLoggedIn) { window.location.href = '/suggestion/'; }
+    else { window.location.href = '/login/'; }
+    return false;
+  };
+
+  // URL参数检测
+  var tabParam = new URLSearchParams(window.location.search).get('tab');
+  if (tabParam === 'charts') {
+    window.location.href = '/my-charts/';
+  }
+
+  // ===== Uptime 计时器=====
+  (function() {
+    var LAUNCH = new Date('2026-06-06T00:00:00+08:00').getTime();
+    function updateUptime() {
+      var now = Date.now();
+      var diff = Math.max(0, now - LAUNCH);
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      var el = document.getElementById('uptimeTimer');
+      if (el) el.textContent = d + 'D ' + h + 'H ' + m + 'M ' + s + 'S';
+    }
+    updateUptime();
+    setInterval(updateUptime, 1000);
+  })();
+})();
+</script>
+</body>
+</html>

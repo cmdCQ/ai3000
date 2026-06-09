@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六十四卦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --text: #1a1a1a;
+  --text-dim: #555;
+  --text-muted: #999;
+  --accent: #b8960a;
+  --accent-bg: rgba(184,150,10,0.06);
+  --border: #e8e3d8;
+  --card-bg: #fff;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --sans: "Noto Sans SC", -apple-system, sans-serif;
+  --serif: "Noto Serif SC", serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrapper{max-width:720px;margin:0 auto;padding:1.5rem 1.2rem 3rem}
+
+/* Header */
+.header{display:flex;align-items:center;gap:0.8rem;margin-bottom:1.5rem}
+.back{color:var(--text-muted);text-decoration:none;font-size:0.85rem;flex-shrink:0}
+.back:hover{color:var(--text-dim)}
+.title{font-family:var(--serif);font-size:1.3rem;font-weight:600;letter-spacing:0.06em}
+
+/* Search */
+.search-wrap{margin-bottom:1.2rem}
+.search-input{width:100%;padding:0.7rem 1rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:var(--sans);background:var(--card-bg);outline:none;transition:border-color 0.2s}
+.search-input:focus{border-color:var(--accent)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin-bottom:1.5rem}
+
+.hex-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.7rem 0.4rem;text-align:center;cursor:pointer;transition:all 0.2s;user-select:none}
+.hex-card:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.hex-card.active{border-color:var(--accent);background:var(--accent-bg)}
+.hex-card .sym{font-size:1.8rem;line-height:1.4}
+.hex-card .nm{font-family:var(--serif);font-size:0.7rem;font-weight:600;margin-top:0.15rem}
+.hex-card .py{font-size:0.55rem;color:var(--text-muted)}
+
+/* Detail panel */
+.detail{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;box-shadow:0 1px 4px rgba(0,0,0,0.03)}
+.detail-empty{text-align:center;padding:2rem 1rem;color:var(--text-muted)}
+.detail-empty .use-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;text-align:left}
+@media(max-width:400px){.detail-empty .use-grid{grid-template-columns:1fr}}
+.use-item{display:flex;align-items:flex-start;gap:0.5rem}
+.use-item .use-icon{font-size:1.3rem;flex-shrink:0;line-height:1}
+.use-item .use-body{font-size:0.75rem;line-height:1.6}
+.use-item .use-body strong{display:block;font-size:0.8rem;color:var(--text);margin-bottom:0.15rem}
+.detail-title{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem}
+.detail-title .dsym{font-size:2.5rem;line-height:1}
+.detail-title .dname{font-family:var(--serif);font-size:1.2rem;font-weight:700}
+.detail-title .dpy{font-size:0.75rem;color:var(--text-muted)}
+.detail-meta{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;font-size:0.7rem}
+.detail-meta span{padding:0.15rem 0.5rem;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text-dim)}
+
+.sec{margin-bottom:0.7rem}
+.sec-label{font-family:var(--serif);font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:0.25rem;letter-spacing:0.04em}
+.sec-text{font-size:0.76rem;color:var(--text-dim);line-height:1.75}
+.block-q{padding:0.5rem 0.8rem;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--accent);margin-bottom:0.3rem;font-size:0.82rem}
+
+.yao-list{display:flex;flex-direction:column;gap:0.25rem;margin-bottom:0.5rem}
+.yao-item{display:flex;align-items:flex-start;gap:0.4rem;padding:0.25rem 0.5rem;border-radius:6px;background:var(--bg);font-size:0.72rem}
+.yao-item .yn{min-width:1.4rem;text-align:center;font-weight:600;color:var(--accent);font-size:0.65rem}
+.yao-item .yt{flex:1;line-height:1.6;color:var(--text-dim)}
+.yongyao{padding:0.3rem 0.5rem;border-radius:6px;background:rgba(184,150,10,0.06);border:1px solid rgba(184,150,10,0.15);font-size:0.72rem;margin-bottom:0.5rem;color:var(--accent)}
+
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.5rem}
+.app-item{padding:0.5rem;border-radius:var(--radius-sm);font-size:0.7rem;line-height:1.6}
+.app-career{background:#eff6ff;color:#1e40af}
+.app-love{background:#fdf2f8;color:#9d174d}
+.app-decision{background:#f0fdf4;color:#166534}
+.app-warning{background:#fef2f2;color:#991b1b}
+
+.sc-tags{display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.4rem}
+.sc-tags span{padding:0.12rem 0.6rem;border-radius:12px;background:var(--bg);border:1px solid var(--border);font-size:0.65rem;color:var(--text-dim)}
+
+.history{padding:0.5rem 0.8rem;background:linear-gradient(135deg,#fffbeb,#ffedd5);border-radius:var(--radius-sm);border:1px solid rgba(184,150,10,0.15);font-size:0.7rem;color:var(--text-dim);line-height:1.7}
+
+.related{display:flex;flex-wrap:wrap;gap:0.3rem}
+.related a{text-decoration:none;padding:0.12rem 0.6rem;border-radius:12px;background:var(--bg);border:1px solid var(--border);font-size:0.65rem;color:var(--text-dim);cursor:pointer}
+.related a:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+.kw-tags{display:flex;flex-wrap:wrap;gap:0.3rem}
+.kw-tags span{font-size:0.6rem;padding:0.08rem 0.5rem;border-radius:8px;background:var(--bg);color:var(--text-muted)}
+
+@media(max-width:400px){
+  .grid{grid-template-columns:repeat(4,1fr);gap:0.3rem}
+  .hex-card{padding:0.35rem 0.15rem}
+  .hex-card .sym{font-size:1.2rem}
+  .hex-card .nm{font-size:0.6rem}
+  .hex-card .py{font-size:0.5rem}
+  .app-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <a href="/" class="back">← 首页</a>
+    <h1 class="title">六十四卦</h1>
+  </div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" placeholder="搜索卦名、拼音、卦象…" oninput="filterGrid(this.value)">
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="detail" id="detail">
+    <div class="detail-empty">
+      <div style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.3rem">如何使用</div>
+      <div class="use-grid">
+        <div class="use-item"><span class="use-icon">🎯</span><div class="use-body"><strong>浏览查询</strong>点击任意卦象，查看完整的卦辞、爻辞、象传和现代解读</div></div>
+        <div class="use-item"><span class="use-icon">🪙</span><div class="use-body"><strong>占卜查卦</strong>使用三枚硬币/铜钱法起卦后，根据结果查看对应卦象</div></div>
+        <div class="use-item"><span class="use-icon">📚</span><div class="use-body"><strong>学习研究</strong>系统学习六十四卦，每卦包含历史典故和现代应用案例</div></div>
+        <div class="use-item"><span class="use-icon">🔗</span><div class="use-body"><strong>关联阅读</strong>每个卦象页面都推荐相关卦象，帮助理解卦象之间的联系</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/hexagrams_data.js?v=1"></script>
+<script>
+// ===== 渲染全部64卦卡片 =====
+function renderGrid() {
+  var h = '';
+  for (var name in HEXAGRAM_DATA) {
+    var d = HEXAGRAM_DATA[name];
+    h += '<div class="hex-card" data-name="'+name+'" onclick="showDetail(\''+name+'\')" id="card-'+name+'">';
+    h += '<div class="sym">'+d.s+'</div>';
+    h += '<div class="nm">'+d.n+'卦</div>';
+    h += '<div class="py">'+d.p+'</div>';
+    h += '</div>';
+  }
+  document.getElementById('grid').innerHTML = h;
+}
+
+function filterGrid(q) {
+  var cards = document.querySelectorAll('.hex-card');
+  var s = q.toLowerCase().trim();
+  cards.forEach(function(c){
+    var name = c.dataset.name;
+    var d = HEXAGRAM_DATA[name];
+    if (!d) { c.style.display='none'; return; }
+    if (!s) { c.style.display=''; return; }
+    var match = d.n.indexOf(s)>=0 || d.p.toLowerCase().indexOf(s)>=0 ||
+                d.g.indexOf(s)>=0 || d.c.indexOf(s)>=0 ||
+                (d.kw||[]).some(function(k){return k.indexOf(s)>=0});
+    c.style.display = match ? '' : 'none';
+  });
+}
+
+// ===== 展示详情 =====
+function showDetail(name) {
+  var d = HEXAGRAM_DATA[name];
+  if (!d) return;
+
+  // 高亮
+  document.querySelectorAll('.hex-card').forEach(function(c){c.classList.remove('active')});
+  var card = document.getElementById('card-'+name);
+  if (card) { card.classList.add('active'); card.scrollIntoView({behavior:'smooth',block:'center'}); }
+
+  var h = '';
+  // 标题
+  h += '<div class="detail-title">';
+  h += '<span class="dsym">'+d.s+'</span>';
+  h += '<div><span class="dname">'+d.n+'卦</span> <span class="dpy">'+d.p+'</span></div>';
+  h += '</div>';
+  // 元数据
+  h += '<div class="detail-meta">';
+  h += '<span>'+d.g+'</span><span>'+d.c+'</span><span>第'+d.i+'卦</span>';
+  h += '</div>';
+  // 核心要义
+  h += '<div class="sec"><div class="sec-label">☯ 核心要义</div>';
+  h += '<div class="sec-text">'+d.m+'</div></div>';
+  // 卦辞
+  h += '<div class="sec"><div class="sec-label">📜 卦辞</div>';
+  h += '<div class="block-q">'+d.gc+'</div>';
+  h += '<div class="sec-text">'+d.gb+'</div></div>';
+  // 象传
+  h += '<div class="sec"><div class="sec-label">🐘 象传</div>';
+  h += '<div class="block-q">'+d.xz+'</div>';
+  h += '<div class="sec-text">'+d.st+'</div></div>';
+  // 爻辞
+  h += '<div class="sec"><div class="sec-label">📊 爻辞详解</div>';
+  h += '<div class="yao-list">';
+  for (var i=0;i<d.y.length;i++) {
+    h += '<div class="yao-item"><span class="yn">'+d.y[i].n+'</span><span class="yt">'+d.y[i].t+'</span></div>';
+  }
+  h += '</div>';
+  if (d.yy) h += '<div class="yongyao">⚡ '+d.yy+'</div>';
+  h += '</div>';
+  // 现代应用
+  h += '<div class="sec"><div class="sec-label">🔮 现代应用指南</div>';
+  h += '<div class="app-grid">';
+  h += '<div class="app-item app-career"><strong>💼 事业</strong><br>'+d.a.ca+'</div>';
+  h += '<div class="app-item app-love"><strong>💕 感情</strong><br>'+d.a.re+'</div>';
+  h += '<div class="app-item app-decision"><strong>🎯 决策</strong><br>'+d.a.de+'</div>';
+  h += '<div class="app-item app-warning"><strong>⚠️ 警示</strong><br>'+d.a.wa+'</div>';
+  h += '</div></div>';
+  // 适用场景
+  if (d.sc && d.sc.length>0) {
+    h += '<div class="sec"><div class="sec-label">🎯 适用场景</div><div class="sc-tags">';
+    d.sc.forEach(function(s){h+='<span>'+s+'</span>';});
+    h += '</div></div>';
+  }
+  // 历史典故
+  if (d.hi) {
+    h += '<div class="sec"><div class="sec-label">📚 历史典故</div>';
+    h += '<div class="history">'+d.hi+'</div></div>';
+  }
+  // 相关卦象
+  if (d.r && d.r.length>0) {
+    h += '<div class="sec"><div class="sec-label">🔗 相关卦象</div><div class="related">';
+    d.r.forEach(function(r){h+='<a onclick="showDetail(\''+r.n.replace(/卦$/,'')+'\')">'+r.s+' '+r.n+'</a>';});
+    h += '</div></div>';
+  }
+  // 关键词
+  if (d.kw && d.kw.length>0) {
+    h += '<div class="kw-tags">';
+    d.kw.forEach(function(k){h+='<span>'+k+'</span>';});
+    h += '</div>';
+  }
+  document.getElementById('detail').innerHTML = h;
+  document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderGrid();
+</script>
+</body>
+</html>

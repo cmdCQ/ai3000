@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>排盘结果 · 梅花易数</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --text: #1a1a1a;
+  --text-dim: #1a1a1a;
+  --text-muted: #1a1a1a;
+  --accent: #b8960a;
+  --accent-bg: rgba(184,150,10,0.06);
+  --border: #e8e3d8;
+  --border-active: #d4c9b0;
+  --card-bg: #fff;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --sans: "Noto Sans SC", -apple-system, sans-serif;
+  --serif: "Noto Serif SC", serif;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+.mh-wrapper { max-width:420px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+.mh-header { display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem 0.6rem; margin-bottom:1rem; }
+.mh-back { color:var(--text-muted); text-decoration:none; font-size:0.85rem; transition:color 0.2s; flex-shrink:0; }
+.mh-back:hover { color:var(--text-dim); }
+.mh-title { font-family:var(--serif); font-size:1.25rem; font-weight:600; letter-spacing:0.06em; flex-shrink:0; }
+
+/* ===== 排盘信息表格 ===== */
+.info-table { width:100%; border-collapse:collapse; font-size:0.78rem; color:var(--text); }
+.info-table tr { border-bottom:1px solid var(--border); }
+.info-table tr:last-child { border-bottom:none; }
+.info-table td { padding:0.2rem 0.5rem; vertical-align:middle; }
+.info-table .td-label { color:var(--text); font-weight:500; white-space:nowrap; width:4.5em; font-family:var(--serif); letter-spacing:0.04em; }
+.info-table .td-value { color:var(--text); }
+.info-table .td-sub { /* 干支四柱的子格 */ padding:0.35rem 0.5rem; text-align:center; border-left:1px solid var(--border); color:var(--text); }
+.info-table .td-sub:first-child { border-left:none; }
+.info-table .td-pillar { font-weight:500; }
+.info-table .td-empty { font-size:0.75rem; }
+.info-table .gz-row td { padding:0.3rem 0; font-size:0.8rem; }
+
+/* Card */
+.card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; margin-bottom:0.8rem; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.card-flush { margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; padding-bottom:0.4rem; }
+.card-next { margin-bottom:0; border-radius:0; border-top:none; padding-top:0.5rem; }
+.card-title { font-family:var(--serif); font-size:0.85rem; font-weight:600; letter-spacing:0.04em; margin-bottom:0.6rem; color:var(--text); }
+
+/* ===== 五卦融合卡片 ===== */
+.hex-panel { display:flex; }
+.hex-cell { flex:1; min-width:0; text-align:center; padding:0.3rem 0 0.05rem; cursor:pointer; transition:all 0.2s; user-select:none; outline:none; -webkit-tap-highlight-color:transparent; border-radius:var(--radius-sm); }
+.hex-cell:hover { background:var(--accent-bg); }
+.hex-cell .hlbl { font-size:0.62rem; color:var(--text); margin-bottom:0.25rem; opacity:0.6; }
+.hex-cell .hname { font-family:var(--serif); font-size:0.72rem; font-weight:600; margin-top:0.25rem; letter-spacing:0.04em; color:var(--text); white-space:nowrap; }
+.hex-cell.active .hname { color:var(--accent); }
+
+/* 爻 display */
+.yao-display { display:flex; flex-direction:column; align-items:center; gap:10px; margin:0.25rem 0; }
+.yao-line { height:4px; border-radius:2px; }
+.yao-yang { width:34px; background:var(--text); }
+.yao-yin { width:34px; display:flex; gap:8px; justify-content:center; }
+.yao-yin span { width:12px; height:4px; background:var(--text); border-radius:2px; display:block; }
+.yao-moving { position:relative; }
+.yao-moving::after { content:'○'; position:absolute; right:-12px; top:-3px; font-size:0.65rem; color:var(--accent); font-weight:bold; }
+
+/* 卦象解析区 */
+.analysis-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; margin-top:0.4rem; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.analysis-card .ac-title { font-family:var(--serif); font-size:0.9rem; font-weight:600; letter-spacing:0.04em; margin-bottom:0.6rem; color:var(--text); }
+
+/* 体用 */
+.tiyong-box { margin-top:0.8rem; padding:0.8rem 1rem; background:var(--bg); border-radius:var(--radius-sm); border:1px solid var(--border); }
+.tiyong-row { display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; margin-bottom:0.3rem; }
+.tiyong-label { font-weight:500; min-width:2.5em; }
+.tiyong-badge { font-size:0.68rem; padding:0.1rem 0.5rem; border-radius:8px; font-weight:500; }
+.tiyong-badge.ti { background:rgba(184,150,10,0.12); color:var(--accent); }
+.tiyong-badge.yong { background:rgba(100,140,200,0.12); color:#5a7fa0; }
+.tiyong-verdict { margin-top:0.5rem; padding:0.5rem 0.8rem; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:500; text-align:center; }
+.verdict-neutral { background:var(--accent-bg); color:var(--accent); border:1px solid rgba(184,150,10,0.15); }
+
+.load-state { text-align:center; padding:3rem 0; color:var(--text-dim); }
+.load-state p { margin-top:0.5rem; font-size:0.85rem; }
+.spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
+@keyframes spin { to{transform:rotate(360deg);} }
+
+@media (max-width:400px) {
+  .mh-wrapper { padding:1rem 1rem 4rem; }
+}
+
+/* ===== 六十四卦解卦卡片 ===== */
+.hex-detail-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.8rem 1rem; margin-top:0.6rem; box-shadow:0 1px 4px rgba(0,0,0,0.03); }
+.hex-detail-title { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem; }
+.hex-detail-title .hd-symbol { font-size:2.2rem; line-height:1; }
+.hex-detail-title .hd-name { font-family:var(--serif); font-size:1rem; font-weight:700; }
+.hex-detail-title .hd-pinyin { font-size:0.7rem; color:var(--text-muted); opacity:0.6; }
+.hex-detail-meta { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.6rem; font-size:0.68rem; }
+.hex-detail-meta span { padding:0.15rem 0.5rem; border-radius:6px; background:var(--bg); border:1px solid var(--border); color:var(--text-dim); }
+.hex-section { margin-bottom:0.6rem; }
+.hex-section-label { font-family:var(--serif); font-size:0.75rem; font-weight:600; color:var(--accent); margin-bottom:0.3rem; letter-spacing:0.04em; }
+.hex-section-content { font-size:0.75rem; color:var(--text-dim); line-height:1.7; }
+.hex-block-quote { padding:0.5rem 0.8rem; background:var(--bg); border-radius:var(--radius-sm); border-left:3px solid var(--accent); margin-bottom:0.4rem; font-size:0.8rem; color:var(--text); }
+.hex-yao-list { display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.5rem; }
+.hex-yao-item { display:flex; align-items:flex-start; gap:0.5rem; padding:0.3rem 0.5rem; border-radius:6px; background:var(--bg); font-size:0.72rem; border:1px solid transparent; }
+.hex-yao-item .yao-num { min-width:1.4rem; text-align:center; font-weight:600; color:var(--accent); font-size:0.68rem; padding-top:0.05rem; }
+.hex-yao-item .yao-text { flex:1; line-height:1.6; color:var(--text-dim); }
+.hex-yongyao { padding:0.3rem 0.5rem; border-radius:6px; background:rgba(184,150,10,0.06); border:1px solid rgba(184,150,10,0.15); font-size:0.72rem; margin-bottom:0.5rem; color:var(--accent); }
+.hex-app-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; margin-bottom:0.6rem; }
+.hex-app-item { padding:0.5rem; border-radius:var(--radius-sm); font-size:0.7rem; line-height:1.6; }
+.hex-app-item.app-career { background:#eff6ff; color:#1e40af; }
+.hex-app-item.app-love { background:#fdf2f8; color:#9d174d; }
+.hex-app-item.app-decision { background:#f0fdf4; color:#166534; }
+.hex-app-item.app-warning { background:#fef2f2; color:#991b1b; }
+.hex-scenarios { display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.4rem; }
+.hex-scenarios span { padding:0.15rem 0.6rem; border-radius:12px; background:var(--bg); border:1px solid var(--border); font-size:0.65rem; color:var(--text-dim); }
+.hex-related { display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.4rem; }
+.hex-related a { text-decoration:none; padding:0.15rem 0.6rem; border-radius:12px; background:var(--bg); border:1px solid var(--border); font-size:0.65rem; color:var(--text-dim); cursor:pointer; transition:all 0.2s; }
+.hex-related a:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+.hex-history { font-size:0.7rem; color:var(--text-dim); line-height:1.7; padding:0.5rem 0.8rem; background:linear-gradient(135deg, #fffbeb, #ffedd5); border-radius:var(--radius-sm); border:1px solid rgba(184,150,10,0.15); }
+.hex-keywords { display:flex; flex-wrap:wrap; gap:0.3rem; }
+.hex-keywords span { font-size:0.62rem; padding:0.1rem 0.5rem; border-radius:8px; background:var(--bg); color:var(--text-muted); opacity:0.7; }
+
+/* ===== AI 智能解析按钮（嵌入标题栏） ===== */
+.ai-title-btn {
+  display:inline-flex; align-items:center; gap:0.25rem;
+  width:100%; justify-content:center;
+  padding:0.4rem 0.7rem;
+  font-family:var(--sans);
+  font-size:0.82rem; font-weight:500;
+  color:#fff;
+  background:linear-gradient(135deg, #b8960a, #d4a91c);
+  border:none; border-radius:10px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all 0.2s;
+  box-shadow:0 2px 8px rgba(184,150,10,0.3);
+  text-shadow:0 1px 1px rgba(0,0,0,0.1);
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.ai-title-btn:hover { opacity:0.88; box-shadow:0 3px 10px rgba(184,150,10,0.4); }
+.ai-title-btn:active { transform:scale(0.97); }
+
+/* AI 面板 */
+.ai-panel-overlay {
+  position:fixed; inset:0; z-index:99;
+  background:rgba(0,0,0,0.25);
+  display:none;
+  animation:aiFadeIn 0.2s ease;
+}
+@keyframes aiFadeIn { from{opacity:0} to{opacity:1} }
+
+.ai-panel {
+  position:fixed; left:0; right:0; bottom:0; z-index:101;
+  max-width:420px; margin:0 auto;
+  max-height:70vh;
+  background:var(--card-bg);
+  border-radius:16px 16px 0 0;
+  border:1px solid var(--border);
+  border-bottom:none;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.1);
+  display:none;
+  flex-direction:column;
+  animation:aiSlideUp 0.25s ease;
+  overflow:hidden;
+}
+@keyframes aiSlideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+.ai-panel.open { display:flex; }
+.ai-panel-overlay.open { display:block; }
+
+.ai-panel-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0.9rem 1.1rem 0.6rem;
+  font-family:var(--serif);
+  font-size:0.9rem; font-weight:600;
+  color:var(--text);
+  flex-shrink:0;
+}
+.ai-panel-close {
+  cursor:pointer; font-size:1.2rem;
+  color:var(--text-muted); opacity:0.5;
+  transition:opacity 0.2s; line-height:1;
+}
+.ai-panel-close:hover { opacity:1; }
+
+.ai-panel-body {
+  padding:0 1.1rem 1rem;
+  overflow-y:auto;
+  flex:1;
+  -webkit-overflow-scrolling:touch;
+}
+
+.ai-panel-body textarea {
+  width:100%;
+  padding:0.6rem 0.8rem;
+  font-size:0.82rem;
+  font-family:var(--sans);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  color:var(--text);
+  outline:none;
+  resize:none;
+  transition:border-color 0.2s;
+  line-height:1.6;
+}
+.ai-panel-body textarea:focus { border-color:var(--border-active); }
+.ai-panel-body textarea::placeholder { color:var(--text-muted); }
+
+.ai-send-row {
+  display:flex; gap:0.5rem; margin-top:0.5rem;
+}
+.ai-send-row button {
+  flex:1; padding:0.55rem;
+  font-size:0.82rem; font-family:var(--sans); font-weight:500;
+  border:none; border-radius:var(--radius-sm);
+  cursor:pointer;
+  transition:opacity 0.2s;
+}
+.ai-btn-primary {
+  background:var(--accent); color:#fff;
+  box-shadow:0 2px 6px rgba(184,150,10,0.2);
+}
+.ai-btn-primary:hover { opacity:0.85; }
+.ai-btn-primary:disabled { opacity:0.4; cursor:default; }
+.ai-btn-cancel {
+  background:var(--bg); color:var(--text-dim);
+  border:1px solid var(--border);
+}
+.ai-btn-cancel:hover { border-color:var(--border-active); }
+
+/* AI 响应区 */
+.ai-response {
+  margin-top:0.8rem;
+  font-size:0.82rem;
+  line-height:1.9;
+  color:var(--text);
+  display:none;
+}
+.ai-response.show { display:block; }
+
+.ai-response .ai-loading {
+  display:flex; align-items:center; gap:0.5rem;
+  padding:0.8rem;
+  color:var(--text-dim);
+  font-size:0.8rem;
+}
+.ai-response .ai-loading .ai-spinner {
+  width:18px; height:18px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:aiSpin 0.7s linear infinite;
+}
+@keyframes aiSpin { to{transform:rotate(360deg)} }
+
+.ai-response .ai-error {
+  padding:0.6rem 0.8rem;
+  background:#fef2f2;
+  color:#991b1b;
+  border-radius:var(--radius-sm);
+  font-size:0.78rem;
+}
+
+.ai-response .ai-empty-hint {
+  text-align:center;
+  padding:1.5rem 0;
+  color:var(--text-muted);
+  font-size:0.78rem;
+  line-height:1.8;
+}
+
+.ai-response .ai-result {
+  padding:0.8rem;
+  background:var(--bg);
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+}
+
+.ai-response .ai-result p { margin-bottom:0.4rem; }
+.ai-response .ai-result p:last-child { margin-bottom:0; }
+.ai-response .ai-result strong { color:var(--accent); font-weight:600; }
+.ai-response .ai-result ol,
+.ai-response .ai-result ul { padding-left:1.2rem; margin-bottom:0.4rem; }
+.ai-response .ai-result li { margin-bottom:0.2rem; }
+
+/* 无事项状态 */
+.ai-no-topic {
+  text-align:center; padding:0.8rem;
+  font-size:0.78rem; color:var(--text-muted);
+  line-height:1.8;
+}
+.ai-no-topic a { color:var(--accent); text-decoration:none; }
+
+/* 底部留白 */
+.mh-wrapper { padding-bottom:5.5rem; }
+
+/* 追问输入栏 */
+.ai-start-btn {
+  display:inline-block;
+  padding:0.7rem 2rem;
+  font-size:0.88rem;
+  font-family:var(--serif);
+  font-weight:600;
+  color:#fff;
+  background:var(--accent);
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  letter-spacing:0.06em;
+  box-shadow:0 3px 12px rgba(184,150,10,0.3);
+  transition:opacity 0.2s, transform 0.15s;
+}
+.ai-start-btn:hover { opacity:0.85; transform:translateY(-1px); }
+.ai-start-btn:active { transform:translateY(0); }
+
+.ai-followup-bar {
+  display:none;
+  margin-top:0.8rem;
+  padding-top:0.6rem;
+  border-top:1px solid var(--border);
+}
+.ai-followup-bar.show { display:block; }
+.ai-followup-input {
+  width:100%;
+  padding:0.55rem 0.7rem;
+  font-size:0.8rem;
+  font-family:var(--sans);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  color:var(--text);
+  outline:none;
+  resize:none;
+  transition:border-color 0.2s;
+  line-height:1.5;
+}
+.ai-followup-input:focus { border-color:var(--border-active); }
+.ai-followup-input::placeholder { color:var(--text-muted); }
+.ai-followup-row {
+  display:flex; gap:0.4rem; margin-top:0.4rem;
+}
+.ai-followup-row button {
+  flex-shrink:0; padding:0.5rem 0.9rem;
+  font-size:0.78rem; font-family:var(--sans); font-weight:500;
+  border:none; border-radius:var(--radius-sm);
+  cursor:pointer; transition:opacity 0.15s;
+}
+.ai-followup-send {
+  background:var(--accent); color:#fff;
+}
+.ai-followup-send:hover { opacity:0.85; }
+.ai-followup-send:disabled { opacity:0.4; cursor:default; }
+
+/* 追问历史区域 */
+.ai-followup-hist {
+  margin-top:0.6rem;
+}
+.ai-followup-item {
+  margin-top:0.5rem;
+  padding:0.5rem 0.7rem;
+  background:var(--bg);
+  border-radius:var(--radius-sm);
+  border-left:3px solid var(--accent);
+  font-size:0.78rem;
+  line-height:1.7;
+}
+.ai-followup-item .fq {
+  font-size:0.72rem;
+  color:var(--text-muted);
+  margin-bottom:0.3rem;
+}
+.ai-followup-item .fq-label {
+  color:var(--accent);
+  font-weight:500;
+}
+
+@media (max-width:400px) {
+  .mh-wrapper { padding-bottom:5rem; }
+  .ai-panel { max-height:75vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="mh-wrapper">
+  <div class="mh-header">
+    <a href="/mhys/" class="mh-back">← 返回排盘</a>
+    <h1 class="mh-title">排盘结果</h1>
+    <button class="ai-title-btn" id="aiBarBtn" onclick="toggleAIPanel()">☯ 看不懂？试试自动解析</button>
+  </div>
+
+  <div id="contentArea">
+    <div class="load-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/auth.js?v=5"></script>
+<script src="/js/hexagrams_data.js?v=1"></script>
+<script>
+// ===== 八卦数据 =====
+var TRIGRAMS = {
+  1: { name:'乾', symbol:'☰', full:'乾为天', element:'金', nature:'天' },
+  2: { name:'兑', symbol:'☱', full:'兑为泽', element:'金', nature:'泽' },
+  3: { name:'离', symbol:'☲', full:'离为火', element:'火', nature:'火' },
+  4: { name:'震', symbol:'☳', full:'震为雷', element:'木', nature:'雷' },
+  5: { name:'巽', symbol:'☴', full:'巽为风', element:'木', nature:'风' },
+  6: { name:'坎', symbol:'☵', full:'坎为水', element:'水', nature:'水' },
+  7: { name:'艮', symbol:'☶', full:'艮为山', element:'土', nature:'山' },
+  8: { name:'坤', symbol:'☷', full:'坤为地', element:'土', nature:'地' }
+};
+
+var METHOD_NAMES = { time:'时间起卦', manual:'手动指定', num1:'数字起卦1', num2:'数字起卦2', auto:'自动起卦' };
+
+function renderLines(lines) {
+  var h = '<div class="yao-display">';
+  for (var i=0; i<lines.length; i++) {
+    var ln = lines[i];
+    h += '<div class="yao-line';
+    if (ln.yang) h += ' yao-yang'; else h += ' yao-yin';
+    if (ln.moving) h += ' yao-moving';
+    h += '">';
+    if (!ln.yang) h += '<span></span><span></span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderHexCell(gua, label, key, isActive) {
+  var cls = 'hex-cell';
+  if (isActive) cls += ' active';
+  var h = '<div class="'+cls+'" onclick="selectGua(\''+key+'\')" id="cell-'+key+'">';
+  h += '<div class="hlbl">'+label+'</div>';
+  h += renderLines(gua.lines);
+  h += '<div class="hname">'+gua.name+'</div>';
+  h += '</div>';
+  return h;
+}
+
+var currentGua = 'ben';
+var g = null;
+var currentTopic = '';
+var currentRecordId = null;
+var savedAnalysis = null;
+
+function selectGua(key) {
+  currentGua = key;
+  document.querySelectorAll('.hex-cell').forEach(function(c){ c.classList.remove('active'); });
+  var cell = document.getElementById('cell-'+key);
+  if(cell) cell.classList.add('active');
+  renderAnalysis();
+}
+
+function renderAnalysis() {
+  var area = document.getElementById('analysisArea');
+  var h = '';
+  var targetGua, hexData;
+
+  if (currentGua === 'ben') {
+    targetGua = g.benGua;
+    hexData = getHexagramByTrigrams(targetGua.upper, targetGua.lower);
+    h += '<div class="card-title">☯ 本卦解析 · 体用生克</div>';
+    h += '<div class="tiyong-box">';
+    h += '<div class="tiyong-row"><span class="tiyong-label">体卦</span><span class="tiyong-badge ti">'+g.ti.tri.symbol+' '+g.ti.tri.name+'（'+g.ti.tri.element+'）</span><span style="font-size:0.72rem;color:var(--text-dim)">不动之卦，代表自己</span></div>';
+    h += '<div class="tiyong-row"><span class="tiyong-label">用卦</span><span class="tiyong-badge yong">'+g.yong.tri.symbol+' '+g.yong.tri.name+'（'+g.yong.tri.element+'）</span><span style="font-size:0.72rem;color:var(--text-dim)">动爻所在，代表事体</span></div>';
+    h += '<div class="tiyong-verdict '+g.verdict.cls+'">'+g.verdict.text+'</div>';
+    h += '<p style="font-size:0.72rem;color:var(--text-dim);margin-top:0.3rem;text-align:center">'+g.verdict.desc+'</p>';
+    h += '</div>';
+    if(hexData){
+      h += '<div class="hex-detail-card">'+renderHexDetail(hexData)+'</div>';
+    }
+  } else if (currentGua === 'hu') {
+    targetGua = g.huGua;
+    hexData = getHexagramByTrigrams(targetGua.upper, targetGua.lower);
+    h += '<div class="card-title">🔄 互卦解析</div>';
+    h += '<p style="font-size:0.78rem;color:var(--text-dim);line-height:1.8;margin-bottom:0.6rem">互卦由本卦的中间四爻交互而成，代表事物发展过程中的中间状态和内在变化。上互卦为第三四五爻，下互卦为第二三四爻。</p>';
+    h += '<div style="padding:0.6rem 0.8rem;background:var(--bg);border-radius:var(--radius-sm);">';
+    h += '<div class="tiyong-row" style="margin-bottom:0.2rem"><span class="tiyong-label">上卦</span><span class="tiyong-badge ti">'+targetGua.upperTri.symbol+' '+targetGua.upperTri.name+'（'+targetGua.upperTri.element+'）</span></div>';
+    h += '<div class="tiyong-row"><span class="tiyong-label">下卦</span><span class="tiyong-badge yong">'+targetGua.lowerTri.symbol+' '+targetGua.lowerTri.name+'（'+targetGua.lowerTri.element+'）</span></div>';
+    h += '</div>';
+    if(hexData){
+      h += '<div class="hex-detail-card">'+renderHexDetail(hexData)+'</div>';
+    }
+  } else if (currentGua === 'bian') {
+    targetGua = g.bianGua;
+    hexData = getHexagramByTrigrams(targetGua.upper, targetGua.lower);
+    h += '<div class="card-title">🔮 变卦解析</div>';
+    h += '<p style="font-size:0.78rem;color:var(--text-dim);line-height:1.8;margin-bottom:0.6rem">变卦由本卦动爻变化而来，代表事物的最终走向和结果。</p>';
+    h += '<div style="padding:0.6rem 0.8rem;background:var(--bg);border-radius:var(--radius-sm);">';
+    h += '<div class="tiyong-row" style="margin-bottom:0.2rem"><span class="tiyong-label">上卦</span><span class="tiyong-badge ti">'+targetGua.upperTri.symbol+' '+targetGua.upperTri.name+'（'+targetGua.upperTri.element+'）</span></div>';
+    h += '<div class="tiyong-row"><span class="tiyong-label">下卦</span><span class="tiyong-badge yong">'+targetGua.lowerTri.symbol+' '+targetGua.lowerTri.name+'（'+targetGua.lowerTri.element+'）</span></div>';
+    h += '</div>';
+    if(hexData){
+      h += '<div class="hex-detail-card">'+renderHexDetail(hexData)+'</div>';
+    }
+  } else if (currentGua === 'cuo') {
+    targetGua = g.cuoGua;
+    hexData = getHexagramByTrigrams(targetGua.upper, targetGua.lower);
+    h += '<div class="card-title">🪞 错卦解析</div>';
+    h += '<p style="font-size:0.78rem;color:var(--text-dim);line-height:1.8;margin-bottom:0.6rem">错卦是将本卦六爻全部阴阳互变所得之卦，代表事物的反面/对立面，即「镜中之象」，揭示隐藏的危机或机遇。</p>';
+    h += '<div style="padding:0.6rem 0.8rem;background:var(--bg);border-radius:var(--radius-sm);">';
+    h += '<div class="tiyong-row" style="margin-bottom:0.2rem"><span class="tiyong-label">上卦</span><span class="tiyong-badge ti">'+targetGua.upperTri.symbol+' '+targetGua.upperTri.name+'（'+targetGua.upperTri.element+'）</span></div>';
+    h += '<div class="tiyong-row"><span class="tiyong-label">下卦</span><span class="tiyong-badge yong">'+targetGua.lowerTri.symbol+' '+targetGua.lowerTri.name+'（'+targetGua.lowerTri.element+'）</span></div>';
+    h += '</div>';
+    if(hexData){
+      h += '<div class="hex-detail-card">'+renderHexDetail(hexData)+'</div>';
+    }
+  } else if (currentGua === 'zong') {
+    targetGua = g.zongGua;
+    hexData = getHexagramByTrigrams(targetGua.upper, targetGua.lower);
+    h += '<div class="card-title">🔃 综卦解析</div>';
+    h += '<p style="font-size:0.78rem;color:var(--text-dim);line-height:1.8;margin-bottom:0.6rem">综卦是将本卦上下颠倒所得之卦，代表从另一个角度看待问题，即「换个角度看问题」。揭示事态的反转可能。</p>';
+    h += '<div style="padding:0.6rem 0.8rem;background:var(--bg);border-radius:var(--radius-sm);">';
+    h += '<div class="tiyong-row" style="margin-bottom:0.2rem"><span class="tiyong-label">上卦</span><span class="tiyong-badge ti">'+targetGua.upperTri.symbol+' '+targetGua.upperTri.name+'（'+targetGua.upperTri.element+'）</span></div>';
+    h += '<div class="tiyong-row"><span class="tiyong-label">下卦</span><span class="tiyong-badge yong">'+targetGua.lowerTri.symbol+' '+targetGua.lowerTri.name+'（'+targetGua.lowerTri.element+'）</span></div>';
+    h += '</div>';
+    if(hexData){
+      h += '<div class="hex-detail-card">'+renderHexDetail(hexData)+'</div>';
+    }
+  }
+  area.innerHTML = h;
+}
+
+function renderHexDetail(hexData) {
+  if (!hexData) return '<div style="padding:0.6rem;color:var(--text-dim);font-size:0.75rem;text-align:center">暂无解卦数据</div>';
+  var h = '';
+  h += '<div class="hex-detail-title">';
+  h += '<span class="hd-symbol">'+hexData.s+'</span>';
+  h += '<div><span class="hd-name">'+hexData.n+'卦</span> ';
+  h += '<span class="hd-pinyin">'+hexData.p+'</span></div>';
+  h += '</div>';
+  h += '<div class="hex-detail-meta">';
+  h += '<span>'+hexData.g+'</span>';
+  h += '<span>'+hexData.c+'</span>';
+  h += '<span>第'+hexData.i+'卦</span>';
+  h += '</div>';
+  h += '<div class="hex-section">';
+  h += '<div class="hex-section-label">☯ 核心要义</div>';
+  h += '<div class="hex-section-content">'+hexData.m+'</div>';
+  h += '</div>';
+  h += '<div class="hex-section">';
+  h += '<div class="hex-section-label">📜 卦辞</div>';
+  h += '<div class="hex-block-quote">'+hexData.gc+'</div>';
+  h += '<div class="hex-section-content">'+hexData.gb+'</div>';
+  h += '</div>';
+  h += '<div class="hex-section">';
+  h += '<div class="hex-section-label">🐘 象传</div>';
+  h += '<div class="hex-block-quote">'+hexData.xz+'</div>';
+  h += '<div class="hex-section-content">'+hexData.st+'</div>';
+  h += '</div>';
+  h += '<div class="hex-section">';
+  h += '<div class="hex-section-label">📊 爻辞详解（自下而上）</div>';
+  h += '<div class="hex-yao-list">';
+  for (var i=0; i<hexData.y.length; i++) {
+    var yao = hexData.y[i];
+    h += '<div class="hex-yao-item">';
+    h += '<span class="yao-num">'+yao.n+'</span>';
+    h += '<span class="yao-text">'+yao.t+'</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  if (hexData.yy) {
+    h += '<div class="hex-yongyao">⚡ '+hexData.yy+'</div>';
+  }
+  h += '</div>';
+  h += '<div class="hex-section">';
+  h += '<div class="hex-section-label">🔮 现代应用指南</div>';
+  h += '<div class="hex-app-grid">';
+  h += '<div class="hex-app-item app-career"><strong>💼 事业</strong><br>'+hexData.a.ca+'</div>';
+  h += '<div class="hex-app-item app-love"><strong>💕 感情</strong><br>'+hexData.a.re+'</div>';
+  h += '<div class="hex-app-item app-decision"><strong>🎯 决策</strong><br>'+hexData.a.de+'</div>';
+  h += '<div class="hex-app-item app-warning"><strong>⚠️ 警示</strong><br>'+hexData.a.wa+'</div>';
+  h += '</div></div>';
+  if (hexData.sc && hexData.sc.length > 0) {
+    h += '<div class="hex-section">';
+    h += '<div class="hex-section-label">🎯 适用场景</div>';
+    h += '<div class="hex-scenarios">';
+    for (var i=0; i<hexData.sc.length; i++) {
+      h += '<span>'+hexData.sc[i]+'</span>';
+    }
+    h += '</div></div>';
+  }
+  if (hexData.hi) {
+    h += '<div class="hex-section">';
+    h += '<div class="hex-section-label">📚 历史典故</div>';
+    h += '<div class="hex-history">'+hexData.hi+'</div>';
+    h += '</div>';
+  }
+  if (hexData.r && hexData.r.length > 0) {
+    h += '<div class="hex-section">';
+    h += '<div class="hex-section-label">🔗 相关卦象</div>';
+    h += '<div class="hex-related">';
+    for (var i=0; i<hexData.r.length; i++) {
+      var r = hexData.r[i];
+      h += '<a onclick="showRelatedGua(\''+r.n+'\')">'+r.s+' '+r.n+'</a>';
+    }
+    h += '</div></div>';
+  }
+  if (hexData.kw && hexData.kw.length > 0) {
+    h += '<div class="hex-keywords">';
+    for (var i=0; i<hexData.kw.length; i++) {
+      h += '<span>'+hexData.kw[i]+'</span>';
+    }
+    h += '</div>';
+  }
+  return h;
+}
+
+function showRelatedGua(name) {
+  var info = getHexagramByName(name);
+  if (!info) return;
+  var area = document.getElementById('analysisArea');
+  var h = '<div class="card-title" style="margin-bottom:0.5rem">🔗 相关卦象 · '+info.n+'卦</div>';
+  h += '<div class="hex-detail-card" style="margin-top:0">';
+  h += renderHexDetail(info);
+  h += '<div style="text-align:center;margin-top:0.6rem"><a onclick="selectGua(\''+currentGua+'\')" style="color:var(--accent);font-size:0.75rem;cursor:pointer;text-decoration:none">← 返回当前卦象</a></div>';
+  h += '</div>';
+  area.innerHTML = h;
+}
+
+function renderResult(result) {
+  g = result.gua;
+  currentTopic = result.topic || '';
+  currentGua = 'ben';
+  var h = '';
+
+  // ===== 排盘信息表格 =====
+  h += '<div class="card card-flush">';
+  h += '<div class="card-title">排盘信息</div>';
+  h += '<table class="info-table">';
+  // 事项
+  if (result.topic) {
+    h += '<tr><td class="td-label">事项</td><td class="td-value">'+escHtml(result.topic)+'</td></tr>';
+  }
+  // 起卦方式
+  h += '<tr><td class="td-label">卦式</td><td class="td-value">'+(METHOD_NAMES[result.method]||result.method)+'</td></tr>';
+  // 输入数字
+  if (result.numbers) {
+    h += '<tr><td class="td-label">数字</td><td class="td-value">'+escHtml(result.numbers)+'</td></tr>';
+  }
+  // 起卦时间（统一显示排盘时间）
+  if (result.divinationTime) {
+    h += '<tr><td class="td-label">时间</td><td class="td-value">'+escHtml(result.divinationTime)+'</td></tr>';
+  } else if (result.createdAt) {
+    // 旧版记录回退
+    var d = new Date(result.createdAt);
+    h += '<tr><td class="td-label">时间</td><td class="td-value">'+formatTime(d)+'</td></tr>';
+  }
+  // 农历
+  var li = result.lunarInfo || {};
+  if (li.lunarMonth && li.lunarDay) {
+    h += '<tr><td class="td-label">农历</td><td class="td-value">'+li.lunarMonth+'月'+li.lunarDay+'</td></tr>';
+  }
+  // 节气
+  if (li.jieQiFull) {
+    h += '<tr><td class="td-label">节气</td><td class="td-value" style="font-size:0.75rem;line-height:1.5">'+escHtml(li.jieQiFull)+'</td></tr>';
+  }
+  // 干支四柱
+  if (li.yearGZ) {
+    h += '<tr>';
+    h += '<td class="td-label" style="text-align:center">干支<br><span style="font-size:0.65rem;color:#999;font-weight:400">空亡</span></td>';
+    h += '<td class="td-value" style="padding:0.3rem 0">';
+    h += '<table style="width:100%;border-collapse:collapse"><tr>';
+    h += '<td class="td-sub">'+escHtml(li.yearGZ)+'<br><span style="font-size:0.65rem;color:#999">'+escHtml(li.xkYear||'')+'</span></td>';
+    h += '<td class="td-sub td-pillar">'+escHtml(li.monthGZ)+'<br><span style="font-size:0.65rem;color:#999">'+escHtml(li.xkMonth||'')+'</span></td>';
+    h += '<td class="td-sub td-pillar">'+escHtml(li.dayGZ)+'<br><span style="font-size:0.65rem;color:#999">'+escHtml(li.xkDay||'')+'</span></td>';
+    h += '<td class="td-sub">'+escHtml(li.hourGZ)+'<br><span style="font-size:0.65rem;color:#999">'+escHtml(li.xkHour||'')+'</span></td>';
+    h += '</tr></table>';
+    h += '</td></tr>';
+  }
+  h += '</table>';
+  h += '</div>';
+
+  // ===== 五卦融合卡片 =====
+  h += '<div class="card card-next">';
+  h += '<div class="card-title">☯ 起卦结果</div>';
+  h += '<div class="hex-panel">';
+  h += renderHexCell(g.benGua, '本卦', 'ben', true);
+  h += renderHexCell(g.huGua, '互卦', 'hu', false);
+  h += renderHexCell(g.bianGua, '变卦', 'bian', false);
+  h += renderHexCell(g.cuoGua, '错卦', 'cuo', false);
+  h += renderHexCell(g.zongGua, '综卦', 'zong', false);
+  h += '</div></div>';
+
+  // 解析区
+  h += '<div class="analysis-card" id="analysisArea"></div>';
+
+  return h;
+}
+
+function formatTime(date) {
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')+' '+
+         String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0')+':'+String(date.getSeconds()).padStart(2,'0');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== 加载数据 =====
+async function load() {
+  var area = document.getElementById('contentArea');
+  var urlParams = new URLSearchParams(window.location.search);
+  var id = urlParams.get('id');
+
+  if (id) {
+    try {
+      var token = AUTH.getToken();
+      var headers = token ? { 'Authorization':'Bearer '+token } : {};
+      var resp = await fetch('/api/mhys-records/'+id, { headers:headers });
+      if (!resp.ok) {
+        area.innerHTML = '<div class="load-state"><p>排盘记录不存在或已删除</p></div>';
+        return;
+      }
+      currentRecordId = id;
+      var data = await resp.json();
+      var result = typeof data.result_data === 'string' ? JSON.parse(data.result_data) : data.result_data;
+      result.topic = data.topic;
+      result.createdAt = data.created_at ? new Date(data.created_at) : null;
+      savedAnalysis = data.ai_analysis || '';
+      area.innerHTML = renderResult(result);
+      renderAnalysis();
+      // 有保存的AI解读则在状态栏显示
+      if (savedAnalysis) {
+        var barBtn = document.getElementById('aiBarBtn');
+        if (barBtn) barBtn.innerHTML = '<span class="ai-icon">☯</span><span>看不懂？试试自动解析</span>';
+      }
+    } catch(e) {
+      area.innerHTML = '<div class="load-state"><p>加载失败，请重试</p></div>';
+    }
+  } else {
+    var stored = localStorage.getItem('mhys_result') || sessionStorage.getItem('mhys_result');
+    if (!stored) {
+      area.innerHTML = '<div class="load-state"><p>没有排盘结果</p><a href="/mhys/" style="color:var(--accent);font-size:0.85rem;text-decoration:none;margin-top:0.5rem;display:inline-block">返回排盘</a></div>';
+      return;
+    }
+    localStorage.removeItem('mhys_result');
+    sessionStorage.removeItem('mhys_result');
+    var result = JSON.parse(stored);
+    area.innerHTML = renderResult(result);
+    renderAnalysis();
+  }
+}
+
+load();
+
+// 等 load 渲染完成后更新 AI bar 状态
+setTimeout(function checkBar() {
+  var barBtn = document.getElementById('aiBarBtn');
+  if (!barBtn) { setTimeout(checkBar, 100); return; }
+  if (currentTopic) {
+    barBtn.classList.remove('ai-disabled');
+    barBtn.setAttribute('title', '点击打开AI解析');
+  }
+  // overlay 点击关闭（用 JS 监听避免误触）
+  var overlay = document.getElementById('aiPanelOverlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeAIPanel();
+    });
+  }
+}, 200);
+
+// ===== AI 智能解析 =====
+var aiStreamAbort = null;
+var aiPanelOpen = false;
+
+function toggleAIPanel() {
+  aiPanelOpen = !aiPanelOpen;
+  document.getElementById('aiPanel').classList.toggle('open', aiPanelOpen);
+  document.getElementById('aiPanelOverlay').classList.toggle('open', aiPanelOpen);
+  if (aiPanelOpen) {
+    showAIHome();
+  }
+}
+
+function closeAIPanel() {
+  aiPanelOpen = false;
+  document.getElementById('aiPanel').classList.remove('open');
+  document.getElementById('aiPanelOverlay').classList.remove('open');
+  // 中断流式请求
+  if (aiStreamAbort) {
+    aiStreamAbort.abort();
+    aiStreamAbort = null;
+  }
+}
+
+function showAIToast(msg) {
+  var el = document.createElement('div');
+  el.textContent = msg;
+  Object.assign(el.style, {
+    position:'fixed', bottom:'5rem', left:'50%', transform:'translateX(-50%)',
+    background:'rgba(0,0,0,0.75)', color:'#fff', padding:'0.5rem 1rem',
+    borderRadius:'8px', fontSize:'0.78rem', zIndex:'200',
+    maxWidth:'360px', textAlign:'center', lineHeight:'1.5',
+    animation:'aiFadeIn 0.2s'
+  });
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 2500);
+}
+
+async function sendFollowUp() {
+  // 未登录用户可追问一次
+  if (!AUTH.isLoggedIn()) {
+    if (localStorage.getItem('mhys_anon_followup')) {
+      var resp = document.getElementById('aiResponse');
+      showLoginPrompt(resp);
+      var fbar = document.getElementById('aiFollowBar');
+      if (fbar) fbar.classList.remove('show');
+      return;
+    }
+  }
+  var input = document.getElementById('aiFollowInput');
+  var q = input.value.trim();
+  if (!q) return;
+
+  var btn = document.getElementById('aiFollowBtn');
+  btn.disabled = true;
+  btn.textContent = '追问中…';
+  input.value = '';
+  input.disabled = true;
+
+  // 追加追问历史
+  var hist = document.getElementById('aiFollowHist');
+  var item = document.createElement('div');
+  item.className = 'ai-followup-item';
+  item.innerHTML = '<div class="fq"><span class="fq-label">追问：</span>'+escHtml(q)+'</div><div class="ai-loading"><div class="ai-spinner"></div><span>输出中……</span></div>';
+  hist.appendChild(item);
+  // 滚动到底部
+  var body = document.getElementById('aiPanelBody');
+  setTimeout(function(){ body.scrollTop = body.scrollHeight; }, 50);
+
+  // 隐藏追问栏（等流结束后再显示）
+  var fbar = document.getElementById('aiFollowBar');
+  fbar.classList.remove('show');
+
+  var token = AUTH.getToken();
+  var headers = { 'Content-Type':'application/json' };
+  if (token) headers['Authorization'] = 'Bearer '+token;
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/mhys/ai-analyze');
+  for (var k in headers) xhr.setRequestHeader(k, headers[k]);
+
+  var prevAnswer = savedAnalysis || '';
+  var fullText = '';
+
+  xhr.onprogress = function() {
+    var newText = xhr.responseText.substring(fullText.length);
+    if (newText) {
+      fullText = xhr.responseText;
+      var ansDiv = item.querySelector('.ai-followup-answer') || document.createElement('div');
+      if (!ansDiv.className) { ansDiv.className = 'ai-followup-answer'; item.appendChild(ansDiv); }
+      ansDiv.innerHTML = renderMarkdown(fullText);
+      body.scrollTop = body.scrollHeight;
+    }
+  };
+
+  xhr.onloadend = function() {
+    btn.disabled = false;
+    btn.textContent = '发送';
+    input.disabled = false;
+    input.focus();
+    fbar.classList.add('show');
+    // 未登录用户标记已使用追问次数
+    if (!AUTH.isLoggedIn()) {
+      localStorage.setItem('mhys_anon_followup', '1');
+    }
+  };
+
+  xhr.send(JSON.stringify({
+    topic: currentTopic,
+    followUp: q,
+    context: prevAnswer,
+    recordId: currentRecordId,
+    hexagrams: {
+      benGua: { name:g.benGua.name, upperTri:g.benGua.upperTri, lowerTri:g.benGua.lowerTri, movingYao:g.benGua.movingYao },
+      huGua: { name:g.huGua.name, upperTri:g.huGua.upperTri, lowerTri:g.huGua.lowerTri },
+      bianGua: { name:g.bianGua.name, upperTri:g.bianGua.upperTri, lowerTri:g.bianGua.lowerTri },
+      cuoGua: { name:g.cuoGua.name, upperTri:g.cuoGua.upperTri, lowerTri:g.cuoGua.lowerTri },
+      zongGua: { name:g.zongGua.name, upperTri:g.zongGua.upperTri, lowerTri:g.zongGua.lowerTri },
+      ti: g.ti,
+      yong: g.yong,
+      verdict: g.verdict
+    }
+  }));
+}
+
+function showAIHome() {
+  var resp = document.getElementById('aiResponse');
+  var hdr = document.querySelector('.ai-panel-header span:first-child');
+  if (hdr) hdr.textContent = '☯ 自动解析';
+  resp.className = 'ai-response show';
+
+  // 未登录用户且已使用过解析次数 → 引导注册
+  if (!AUTH.isLoggedIn() && localStorage.getItem('mhys_anon_used')) {
+    showLoginPrompt(resp);
+    return;
+  }
+
+  // 已有保存的解析 → 直接展示，并显示追问栏
+  if (savedAnalysis) {
+    showSavedAnalysis();
+    var fbar = document.getElementById('aiFollowBar');
+    if (fbar) fbar.classList.add('show');
+    return;
+  }
+
+  // 无保存解析 → 显示开始按钮
+  resp.innerHTML = '<div style="text-align:center;padding:1.5rem 0">' +
+    '<div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.2rem">点击下方按钮开始解卦分析</div>' +
+    '<button class="ai-start-btn" onclick="startButtonClicked()">☯ 开始解卦</button>' +
+    '</div>';
+}
+
+function showLoginPrompt(respEl) {
+  respEl.innerHTML = '<div style="text-align:center;padding:1.5rem 1rem">' +
+    '<div style="font-size:1.2rem;margin-bottom:0.5rem">🔒</div>' +
+    '<div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:0.3rem">免费解析次数已用完</div>' +
+    '<div style="font-size:0.75rem;color:var(--text-dim);line-height:1.7;margin-bottom:1rem">注册登录后即可使用全部功能<br>登录可享最少 <strong style="color:var(--accent)">100 次</strong> AI 解析</div>' +
+    '<div style="display:flex;gap:0.5rem;justify-content:center">' +
+      '<a href="/register/" class="ai-start-btn" style="display:inline-block;text-decoration:none">注册</a>' +
+      '<a href="/login/" class="ai-start-btn" style="display:inline-block;text-decoration:none;background:#fff;color:var(--accent);border:1px solid var(--accent);box-shadow:none">登录</a>' +
+    '</div>' +
+    '</div>';
+}
+
+function startButtonClicked() {
+  if (!AUTH.isLoggedIn() && localStorage.getItem('mhys_anon_used')) {
+    var resp = document.getElementById('aiResponse');
+    showLoginPrompt(resp);
+    return;
+  }
+  if (savedAnalysis) {
+    showSavedAnalysis();
+  } else {
+    startAIStream();
+  }
+}
+
+function showSavedAnalysis() {
+  var resp = document.getElementById('aiResponse');
+  resp.className = 'ai-response show';
+  resp.innerHTML = '<div class="ai-result">'+renderMarkdown(savedAnalysis)+'</div>';
+  var hdr = document.querySelector('.ai-panel-header span:first-child');
+  if (hdr) hdr.textContent = '☯ 已保存的解析';
+  // 显示追问输入栏
+  var fbar = document.getElementById('aiFollowBar');
+  if (fbar) fbar.classList.add('show');
+}
+
+async function startAIStream() {
+  var resp = document.getElementById('aiResponse');
+  resp.className = 'ai-response show';
+
+  try {
+    aiStreamAbort = new AbortController();
+    
+    var token = AUTH.getToken();
+    var headers = { 'Content-Type':'application/json' };
+    if (token) headers['Authorization'] = 'Bearer '+token;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/mhys/ai-analyze');
+    for (var k in headers) xhr.setRequestHeader(k, headers[k]);
+    
+    var fullText = '';
+    var respDiv = document.createElement('div');
+    respDiv.className = 'ai-result';
+    respDiv.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div><span>输出中……</span></div>';
+    resp.innerHTML = '';
+    resp.appendChild(respDiv);
+
+    xhr.onprogress = function() {
+      var newText = xhr.responseText.substring(fullText.length);
+      if (newText) {
+        fullText = xhr.responseText;
+        respDiv.innerHTML = renderMarkdown(fullText);
+        resp.scrollTop = resp.scrollHeight;
+      }
+    };
+
+    xhr.onerror = function() {
+      if (fullText) {
+        respDiv.innerHTML = renderMarkdown(fullText) + '<p style="color:#991b1b;font-size:0.75rem;margin-top:0.5rem">⚠ 传输中断，以上为已接收内容</p>';
+      } else {
+        resp.innerHTML = '<div class="ai-error">❌ 连接失败，请重试</div>';
+      }
+    };
+
+    xhr.onloadend = function() {
+      aiStreamAbort = null;
+      // 流完成 → 显示追问输入栏
+      var fbar = document.getElementById('aiFollowBar');
+      if (fbar) fbar.classList.add('show');
+      // 滚动到底部
+      var body = document.getElementById('aiPanelBody');
+      if (body) setTimeout(function(){ body.scrollTop = body.scrollHeight; }, 100);
+
+      // 有记录ID → 静默保存到后台（去掉 Token 尾行）
+      var analysisText = fullText;
+      if (analysisText) {
+        // 去掉末尾的 Token 消耗行
+        var tokenIdx = analysisText.lastIndexOf('\n消耗 Token：');
+        if (tokenIdx > 0) analysisText = analysisText.substring(0, tokenIdx).trim();
+      }
+      if (analysisText && currentRecordId) {
+        fetch('/api/mhys-records/'+currentRecordId+'/ai', {
+          method:'PATCH',
+          headers:headers,
+          body:JSON.stringify({ analysis: analysisText })
+        }).catch(function(){});
+      }
+      if (fullText) {
+        savedAnalysis = analysisText || fullText;
+        var barBtn = document.getElementById('aiBarBtn');
+        if (barBtn) barBtn.innerHTML = '<span class="ai-icon">☯</span><span>看不懂？试试自动解析</span>';
+        // 未登录用户标记已使用
+        if (!AUTH.isLoggedIn()) {
+          localStorage.setItem('mhys_anon_used', '1');
+        }
+      }
+    };
+
+    xhr.send(JSON.stringify({
+      topic: currentTopic,
+      recordId: currentRecordId,
+      hexagrams: {
+        benGua: { name:g.benGua.name, upperTri:g.benGua.upperTri, lowerTri:g.benGua.lowerTri, movingYao:g.benGua.movingYao },
+        huGua: { name:g.huGua.name, upperTri:g.huGua.upperTri, lowerTri:g.huGua.lowerTri },
+        bianGua: { name:g.bianGua.name, upperTri:g.bianGua.upperTri, lowerTri:g.bianGua.lowerTri },
+        cuoGua: { name:g.cuoGua.name, upperTri:g.cuoGua.upperTri, lowerTri:g.cuoGua.lowerTri },
+        zongGua: { name:g.zongGua.name, upperTri:g.zongGua.upperTri, lowerTri:g.zongGua.lowerTri },
+        ti: g.ti,
+        yong: g.yong,
+        verdict: g.verdict
+      }
+    }));
+    
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      resp.innerHTML = '<div class="ai-error">❌ 解卦失败：'+escHtml(e.message)+'</div>';
+    }
+  }
+}
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  // 转义 HTML
+  text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // 代码块（先处理，避免内部内容被后续规则干扰）
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, function(m,a,code){ return '<pre style="background:#f5f4f0;padding:0.6rem;border-radius:6px;font-size:0.75rem;overflow-x:auto;margin:0.5rem 0;line-height:1.5">'+code.trim()+'</pre>'; });
+  // 行内代码
+  text = text.replace(/`([^`]+)`/g, '<code style="background:#f5f4f0;padding:0.1rem 0.3rem;border-radius:3px;font-size:0.78rem">$1</code>');
+  // 水平分割线
+  text = text.replace(/^---+\s*$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:0.6rem 0">');
+  // 标题
+  text = text.replace(/^### (.+)$/gm, '<h3 style="font-family:var(--serif);font-size:0.85rem;font-weight:600;margin:0.6rem 0 0.3rem;color:var(--text)">$1</h3>');
+  text = text.replace(/^## (.+)$/gm, '<h2 style="font-family:var(--serif);font-size:0.95rem;font-weight:600;margin:0.7rem 0 0.3rem;color:var(--text)">$1</h2>');
+  text = text.replace(/^# (.+)$/gm, '<h1 style="font-family:var(--serif);font-size:1.05rem;font-weight:700;margin:0.8rem 0 0.3rem;color:var(--text)">$1</h1>');
+  // 金色区块标题 — 【一、回答】等
+  text = text.replace(/^【([^】]+)】/gm, '<div style="font-family:var(--serif);font-size:0.88rem;font-weight:700;color:var(--accent);margin:0.7rem 0 0.2rem;letter-spacing:0.04em">【$1】</div>');
+  // 引用块
+  text = text.replace(/^> (.+)$/gm, '<blockquote style="padding:0.4rem 0.7rem;margin:0.4rem 0;border-left:3px solid var(--accent);background:var(--bg);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:0.78rem;color:var(--text-dim);line-height:1.7">$1</blockquote>');
+  // 无序列表（- 或 * 开头）
+  var ulCount = 0;
+  text = text.replace(/^[\s]*[-*] (.+)$/gm, function(m,content){ return '<span style="display:block;padding-left:1.2rem;position:relative;line-height:1.8"><span style="position:absolute;left:0.3rem">•</span>'+content+'</span>'; });
+  // 有序列表
+  text = text.replace(/^[\s]*\d+\. (.+)$/gm, function(m,content){ return '<span style="display:block;padding-left:1.2rem;line-height:1.8">'+content+'</span>'; });
+  // 加粗 — 重点结论用金色
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent)">$1</strong>');
+  // 斜体
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // 段落：连续非空行用 <p> 包裹，保留 \n 只为分割
+  var lines = text.split(/\n/);
+  var out = [];
+  var inPara = false;
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i];
+    var isBlock = /^<(h[123]|pre|blockquote|hr|span|div)/.test(l);
+    var isLine = /^<br\s*\/?>$/.test(l);
+    var isEmpty = l.trim() === '';
+    if (isBlock) {
+      if (inPara) { out.push('</p>'); inPara = false; }
+      out.push(l);
+    } else if (isEmpty) {
+      if (inPara) { out.push('</p>'); inPara = false; }
+    } else {
+      if (!inPara) { out.push('<p>'); inPara = true; }
+      else { out.push('<br>'); }
+      out.push(l);
+    }
+  }
+  if (inPara) out.push('</p>');
+  return out.join('');
+}
+
+</script>
+
+<!-- AI 面板背景遮罩 -->
+<div class="ai-panel-overlay" id="aiPanelOverlay"></div>
+
+<!-- AI 面板 -->
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <span>☯ 自动解析</span>
+    <span class="ai-panel-close" onclick="closeAIPanel()">✕</span>
+  </div>
+  <div class="ai-panel-body" id="aiPanelBody">
+    <div class="ai-response" id="aiResponse"></div>
+    <div class="ai-followup-hist" id="aiFollowHist"></div>
+    <div class="ai-followup-bar" id="aiFollowBar">
+      <textarea class="ai-followup-input" id="aiFollowInput" placeholder="追问…" rows="2"></textarea>
+      <div class="ai-followup-row">
+        <button class="ai-followup-send" id="aiFollowBtn" onclick="sendFollowUp()">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

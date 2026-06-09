@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>排盘记录 · 梅花易数</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --text: #1a1a1a;
+  --text-dim: #888;
+  --text-muted: #bbb;
+  --accent: #b8960a;
+  --accent-dim: rgba(184,150,10,0.6);
+  --border: #e8e3d8;
+  --border-active: #d4c9b0;
+  --card-bg: #fff;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --sans: "Noto Sans SC", -apple-system, sans-serif;
+  --serif: "Noto Serif SC", serif;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+/* ===== 悬浮菜单 ===== */
+.float-menu { position:sticky; top:0; z-index:100; background:rgba(250,248,245,0.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:0.7rem 1.2rem; margin-bottom:0.8rem; }
+.fm-top { display:flex; align-items:center; justify-content:space-between; }
+.fm-left { display:flex; align-items:center; gap:0.5rem; }
+.fm-back { color:var(--text-dim); text-decoration:none; font-size:0.85rem; transition:color 0.2s; flex-shrink:0; }
+.fm-back:hover { color:var(--text); }
+.fm-title { font-family:var(--serif); font-size:1rem; font-weight:600; letter-spacing:0.05em; color:var(--text); }
+.fm-right { display:flex; align-items:center; gap:0.4rem; }
+.fm-btn { padding:0.35rem 0.75rem; font-size:0.78rem; font-family:inherit; border:1px solid var(--border); border-radius:8px; background:var(--card-bg); color:var(--text-dim); cursor:pointer; transition:all 0.2s; }
+.fm-btn:hover { border-color:var(--border-active); color:var(--text); }
+.fm-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.fm-btn.manage-btn { border-color:var(--accent-dim); color:var(--accent); font-weight:500; }
+.fm-btn.manage-btn:hover { background:rgba(184,150,10,0.06); border-color:var(--accent); }
+
+/* 搜索框 */
+.fm-search { margin-top:0.5rem; display:flex; align-items:center; gap:0.4rem; }
+.fm-search input { flex:1; padding:0.45rem 0.7rem; font-size:0.8rem; font-family:inherit; border:1px solid var(--border); border-radius:8px; background:var(--card-bg); color:var(--text); outline:none; transition:border-color 0.2s; }
+.fm-search input:focus { border-color:var(--border-active); }
+.fm-search input::placeholder { color:var(--text-muted); }
+.fm-search-clear { background:none; border:none; color:var(--text-muted); font-size:1rem; cursor:pointer; padding:0.3rem 0.5rem; display:none; }
+.fm-search-clear.visible { display:block; }
+
+/* 管理操作栏 */
+.fm-actions { margin-top:0.5rem; display:none; align-items:center; justify-content:space-between; }
+.fm-actions.show { display:flex; }
+.fm-actions .fm-select-all { font-size:0.75rem; color:var(--text-dim); cursor:pointer; }
+.fm-actions .fm-delete-selected { padding:0.35rem 0.75rem; font-size:0.75rem; font-family:inherit; border:1px solid #c94a4a; border-radius:8px; background:var(--card-bg); color:#c94a4a; cursor:pointer; transition:all 0.2s; }
+.fm-actions .fm-delete-selected:hover { background:rgba(201,74,74,0.08); }
+.fm-actions .fm-delete-selected:disabled { opacity:0.4; cursor:default; }
+
+/* 主内容区 */
+.mh-wrapper { max-width:420px; margin:0 auto; padding:0 1.2rem 4rem; }
+
+/* 记录卡片 */
+.record-list { display:flex; flex-direction:column; gap:0.6rem; }
+.record-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.85rem 1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.03); display:flex; align-items:center; gap:0.6rem; position:relative; }
+.record-card:hover { border-color:var(--border-active); box-shadow:0 3px 12px rgba(0,0,0,0.06); transform:translateY(-1px); }
+.record-card .rc-emoji { font-size:1.4rem; flex-shrink:0; }
+.record-card .rc-info { flex:1; min-width:0; }
+.record-card .rc-topic { font-size:0.88rem; font-weight:500; color:var(--text); margin-bottom:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.record-card .rc-meta { font-size:0.7rem; color:var(--text-dim); display:flex; gap:0.6rem; }
+.record-card .rc-arrow { font-size:1rem; color:var(--text-muted); flex-shrink:0; transition:transform 0.2s; }
+.record-card:hover .rc-arrow { transform:translateX(2px); }
+
+/* 管理模式 */
+.manage-mode .record-card { cursor:pointer; }
+.manage-mode .record-card:hover { border-color:rgba(201,74,74,0.3); }
+.manage-mode .record-card.selected { border-color:#c94a4a; background:rgba(201,74,74,0.03); box-shadow:0 2px 8px rgba(201,74,74,0.1); }
+.manage-mode .record-card.selected .rc-arrow { color:#c94a4a; }
+.manage-mode .rc-checkbox { width:20px; height:20px; border:2px solid var(--border); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.manage-mode .rc-checkbox::after { content:'✓'; font-size:0.7rem; color:#fff; opacity:0; }
+.manage-mode .record-card.selected .rc-checkbox { border-color:#c94a4a; background:#c94a4a; }
+.manage-mode .record-card.selected .rc-checkbox::after { opacity:1; }
+
+/* 空状态 */
+.empty-state { text-align:center; padding:3rem 0; color:var(--text-dim); }
+.empty-state .empty-icon { font-size:2.5rem; margin-bottom:0.6rem; }
+.empty-state p { font-size:0.85rem; }
+
+/* 加载 */
+.load-state { text-align:center; padding:3rem 0; color:var(--text-dim); }
+.spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 0.5rem; }
+@keyframes spin { to{transform:rotate(360deg);} }
+
+@media (max-width:400px) {
+  .float-menu { padding:0.6rem 1rem; }
+  .mh-wrapper { padding:0 1rem 4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- 悬浮菜单 -->
+<div class="float-menu" id="floatMenu">
+  <div class="fm-top">
+    <div class="fm-left">
+      <a href="/mhys/" class="fm-back">← 返回</a>
+      <span class="fm-title">排盘记录</span>
+    </div>
+    <div class="fm-right">
+      <button class="fm-btn manage-btn" id="manageBtn" onclick="toggleManage()">管理</button>
+    </div>
+  </div>
+  <div class="fm-search">
+    <input type="text" id="searchInput" placeholder="搜索卦例..." oninput="onSearch()">
+    <button class="fm-search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+  </div>
+  <div class="fm-actions" id="fmActions">
+    <span class="fm-select-all" onclick="toggleSelectAll()">全选</span>
+    <span style="font-size:0.72rem;color:var(--text-dim)" id="selectedCount">已选 0</span>
+    <button class="fm-delete-selected" id="deleteSelectedBtn" onclick="deleteSelected()" disabled>删除选中</button>
+  </div>
+</div>
+
+<div class="mh-wrapper">
+  <div id="contentArea">
+    <div class="load-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/auth.js?v=5"></script>
+<script>
+var allRecords = [];
+var manageMode = false;
+var selectedIds = {};
+
+var EMOJI_MAP = {
+  time: '🕐', manual: '✋', num1: '🔢', num2: '🔢', auto: '🎲'
+};
+
+var METHOD_NAMES = { time:'时间起卦', manual:'手动指定', num1:'数字起卦1', num2:'数字起卦2', auto:'自动起卦' };
+
+function formatTime(ts) {
+  var d = new Date(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+
+         String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== 管理模式 =====
+function toggleManage() {
+  manageMode = !manageMode;
+  selectedIds = {};
+  var btn = document.getElementById('manageBtn');
+  var actions = document.getElementById('fmActions');
+  var clearBtn = document.getElementById('searchClear');
+  var wrapper = document.querySelector('.mh-wrapper');
+  
+  if (manageMode) {
+    btn.textContent = '完成';
+    btn.classList.add('active');
+    actions.classList.add('show');
+    wrapper.classList.add('manage-mode');
+  } else {
+    btn.textContent = '管理';
+    btn.classList.remove('active');
+    actions.classList.remove('show');
+    wrapper.classList.remove('manage-mode');
+    clearBtn.classList.remove('visible');
+    document.getElementById('searchInput').value = '';
+  }
+  updateSelectedCount();
+  renderCards(allRecords);
+}
+
+function toggleSelectAll() {
+  var filtered = getFilteredRecords();
+  var allSelected = filtered.every(function(r){ return selectedIds[r.id]; });
+  if (allSelected) {
+    filtered.forEach(function(r){ delete selectedIds[r.id]; });
+  } else {
+    filtered.forEach(function(r){ selectedIds[r.id] = true; });
+  }
+  updateSelectedCount();
+  renderCards(allRecords);
+}
+
+function updateSelectedCount() {
+  var count = Object.keys(selectedIds).length;
+  document.getElementById('selectedCount').textContent = '已选 '+count;
+  document.getElementById('deleteSelectedBtn').disabled = (count === 0);
+}
+
+// ===== 搜索 =====
+function onSearch() {
+  var val = document.getElementById('searchInput').value.trim();
+  var clearBtn = document.getElementById('searchClear');
+  if (val) {
+    clearBtn.classList.add('visible');
+  } else {
+    clearBtn.classList.remove('visible');
+  }
+  renderCards(allRecords);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchClear').classList.remove('visible');
+  renderCards(allRecords);
+}
+
+function getFilteredRecords() {
+  var val = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!val) return allRecords;
+  return allRecords.filter(function(r){
+    return (r.topic||'').toLowerCase().indexOf(val) >= 0;
+  });
+}
+
+// ===== 渲染卡片 =====
+function renderCards(records) {
+  var area = document.getElementById('contentArea');
+  var filtered = getFilteredRecords();
+  
+  if (!filtered.length) {
+    var msg = document.getElementById('searchInput').value.trim() ? '没有匹配的卦例' : '暂无排盘记录';
+    area.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>'+msg+'</p><a href="/mhys/" style="color:var(--accent);font-size:0.85rem;text-decoration:none;margin-top:0.5rem;display:inline-block">去排盘</a></div>';
+    return;
+  }
+  
+  var h = '<div class="record-list">';
+  filtered.forEach(function(r) {
+    var emoji = EMOJI_MAP[r.method] || '☯';
+    var isSelected = !!selectedIds[r.id];
+    var cls = 'record-card' + (manageMode && isSelected ? ' selected' : '');
+    var methodName = METHOD_NAMES[r.method] || r.method;
+    
+    h += '<div class="'+cls+'" ';
+    if (manageMode) {
+      h += 'onclick="toggleCard(\''+r.id+'\')"';
+    } else {
+      h += 'onclick="viewRecord(\''+r.id+'\')"';
+    }
+    h += '>';
+    if (manageMode) {
+      h += '<div class="rc-checkbox"></div>';
+    }
+    h += '<div class="rc-emoji">'+emoji+'</div>';
+    h += '<div class="rc-info">';
+    h += '<div class="rc-topic">'+escHtml(r.topic||'(无事项)')+'</div>';
+    // 卡片显示 recordTime（实际排盘时间），旧版回退
+    var timeStr = r.recordTime ? formatTime(r.recordTime) : (r.divinationTime || (r.created_at ? formatTime(r.created_at) : ''));
+    h += '<div class="rc-meta"><span>'+methodName+'</span><span>'+timeStr+'</span></div>';
+    h += '</div>';
+    if (!manageMode) {
+      h += '<span class="rc-arrow">›</span>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  area.innerHTML = h;
+}
+
+function toggleCard(id) {
+  if (selectedIds[id]) {
+    delete selectedIds[id];
+  } else {
+    selectedIds[id] = true;
+  }
+  updateSelectedCount();
+  renderCards(allRecords);
+}
+
+// ===== 删除 =====
+async function deleteSelected() {
+  var ids = Object.keys(selectedIds);
+  if (!ids.length) return;
+  if (!confirm('确定要删除选中的 '+ids.length+' 条排盘记录吗？')) return;
+  
+  var token = AUTH.getToken();
+  var headers = token ? { 'Content-Type':'application/json', 'Authorization':'Bearer '+token } : { 'Content-Type':'application/json' };
+  
+  var errors = [];
+  for (var i=0; i<ids.length; i++) {
+    try {
+      var resp = await fetch('/api/mhys-records/'+ids[i], { method:'DELETE', headers:headers });
+      if (!resp.ok) errors.push(ids[i]);
+    } catch(e) {
+      errors.push(ids[i]);
+    }
+  }
+  
+  selectedIds = {};
+  updateSelectedCount();
+  await loadRecords();
+  
+  if (errors.length) {
+    alert('部分记录删除失败');
+  }
+}
+
+function viewRecord(id) {
+  if (manageMode) return;
+  window.location.href = '/mhys/result.html?id=' + id;
+}
+
+// ===== 加载 =====
+async function loadRecords() {
+  var area = document.getElementById('contentArea');
+  // 未登录用户 → 引导登录
+  if (!AUTH.isLoggedIn()) {
+    area.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p style="margin-bottom:0.5rem;color:var(--text)">登录后查看排盘记录</p><p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem">登录后可查看历史排盘和AI解读记录</p><a href="/login/" class="guest-btn primary" style="display:inline-block;padding:0.5rem 1.5rem;font-size:0.82rem;font-family:inherit;border-radius:14px;cursor:pointer;text-decoration:none;letter-spacing:0.04em;font-weight:500;color:#fff;background:var(--accent);border:none;box-shadow:0 2px 8px rgba(184,150,10,0.25)">去登录</a></div>';
+    return;
+  }
+  try {
+    var token = AUTH.getToken();
+    var headers = token ? { 'Authorization':'Bearer '+token } : {};
+    var resp = await fetch('/api/mhys-records', { headers:headers });
+    if (!resp.ok) {
+      allRecords = [];
+      renderCards([]);
+      return;
+    }
+    allRecords = await resp.json();
+    if (!allRecords.length) {
+      renderCards([]);
+      return;
+    }
+    // 按实际排盘时间倒序（recordTime），旧记录回退到 created_at
+    allRecords.sort(function(a,b) {
+      var ta = a.recordTime ? new Date(a.recordTime).getTime() : (a.created_at || 0);
+      var tb = b.recordTime ? new Date(b.recordTime).getTime() : (b.created_at || 0);
+      return tb - ta; // 倒序
+    });
+    renderCards(allRecords);
+  } catch(e) {
+    allRecords = [];
+    renderCards([]);
+  }
+}
+
+loadRecords();
+</script>
+</body>
+</html>

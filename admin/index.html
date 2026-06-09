@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>后台管理 · AI三千问</title>
+<link rel="stylesheet" href="/css/admin.css?v=1749475000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="adm-root">
+
+  <!-- ========== 登录 ========== -->
+  <div class="adm-login" id="admLogin">
+    <div class="adm-login-card">
+      <div class="adm-login-brand">
+        <span class="adm-login-logo">AI三千问</span>
+        <span class="adm-login-dot"></span>
+        <span class="adm-login-sub">后台管理</span>
+      </div>
+      <form id="admLoginForm">
+        <div class="adm-field">
+          <label>用户名</label>
+          <input type="text" id="admUsername" placeholder="管理员用户名" autocomplete="username" required>
+        </div>
+        <div class="adm-field">
+          <label>密码</label>
+          <input type="password" id="admPassword" placeholder="输入管理密码" autocomplete="current-password" required>
+        </div>
+        <p class="adm-err" id="admLoginErr"></p>
+        <button type="submit" class="adm-btn-primary">进入后台</button>
+      </form>
+      <a href="/" class="adm-back-link">← 返回首页</a>
+    </div>
+  </div>
+
+  <!-- ========== 控制台 ========== -->
+  <div class="adm-dash" id="admDash" style="display:none">
+
+    <!-- 顶栏 -->
+    <header class="adm-topbar">
+      <div class="adm-topbar-left">
+        <span class="adm-logo">AI三千问</span>
+        <span class="adm-tag">admin</span>
+      </div>
+      <div class="adm-topbar-right">
+        <span class="adm-clock" id="admClock"></span>
+        <span class="adm-sep">|</span>
+        <a href="/" class="adm-toplink">前台</a>
+        <span class="adm-sep">|</span>
+        <button class="adm-toplink" id="admLogout">退出</button>
+      </div>
+    </header>
+
+    <div class="adm-body">
+      <!-- 侧栏 -->
+      <nav class="adm-sidebar">
+        <a href="#" class="adm-nav-item active" data-tab="dashboard">
+          <span class="adm-nav-icon">◇</span>
+          <span>仪表盘</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="users">
+          <span class="adm-nav-icon">○</span>
+          <span>用户</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="charts">
+          <span class="adm-nav-icon">◎</span>
+          <span>命盘</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="divination">
+          <span class="adm-nav-icon">☯</span>
+          <span>占卜</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="settings">
+          <span class="adm-nav-icon">⦿</span>
+          <span>设置</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="suggestions">
+          <span class="adm-nav-icon">✎</span>
+          <span>建议</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="books">
+          <span class="adm-nav-icon">📖</span>
+          <span>参考书籍</span>
+        </a>
+      </nav>
+
+      <!-- 主内容 -->
+      <main class="adm-main">
+
+        <!-- ===== 仪表盘 ===== -->
+        <section class="adm-tab active" id="tab-dashboard">
+          <h2 class="adm-sec-title">仪表盘</h2>
+          <div class="adm-stats">
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statTotal">—</span>
+              <span class="adm-stat-label">总用户</span>
+              <span class="adm-stat-sub" id="statTotalSub"></span>
+            </div>
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statToday">—</span>
+              <span class="adm-stat-label">今日新增</span>
+            </div>
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statCharts">—</span>
+              <span class="adm-stat-label">命盘总数</span>
+            </div>
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statDivination">—</span>
+              <span class="adm-stat-label">排卦总数</span>
+            </div>
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statAI">—</span>
+              <span class="adm-stat-label">AI 解读次数</span>
+            </div>
+            <div class="adm-stat">
+              <span class="adm-stat-num" id="statActive">—</span>
+              <span class="adm-stat-label">7 天活跃</span>
+              <span class="adm-stat-sub" id="statActiveSub"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 用户管理 ===== -->
+        <section class="adm-tab" id="tab-users">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">用户管理</h2>
+            <div class="adm-sec-meta" id="usersMeta"></div>
+            <input type="search" id="usersSearch" class="adm-search-input" placeholder="搜索手机号…" oninput="filterUsers()">
+          </div>
+          <div class="adm-table-wrap">
+            <table class="adm-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>手机号</th>
+                  <th>注册时间</th>
+                  <th>命盘数</th>
+                  <th>AI 解析</th>
+                  <th>Token 消耗</th>
+                  <th>等级</th>
+                  <th>最后活跃</th>
+                  <th class="adm-th-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="usersTbody">
+                <tr><td colspan="8" class="adm-empty">加载中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===== 命盘管理（卡片视图） ===== -->
+        <section class="adm-tab" id="tab-charts">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">命盘管理</h2>
+            <div class="adm-sec-meta" id="chartsMeta"></div>
+          </div>
+          <div class="adm-card-grid" id="chartsCardGrid">
+            <div class="adm-card-empty">加载中…</div>
+          </div>
+
+          <!-- 用户命盘详情面板 -->
+          <div class="adm-detail-panel" id="chartsDetailPanel" style="display:none">
+            <div class="adm-detail-head">
+              <button class="adm-back-btn" onclick="closeChartDetail()">← 返回</button>
+              <span class="adm-detail-title" id="chartsDetailTitle"></span>
+            </div>
+            <div class="adm-table-wrap" style="margin-top:0.5rem">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>命盘名称</th>
+                    <th>性别</th>
+                    <th>出生日期</th>
+                    <th>出生地</th>
+                    <th>创建时间</th>
+                    <th class="adm-th-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="chartsDetailTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 占卜管理（梅花易数排盘记录） ===== -->
+        <section class="adm-tab" id="tab-divination">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">占卜管理</h2>
+            <div class="adm-sec-meta" id="divMeta"></div>
+          </div>
+          <div class="adm-card-grid" id="divCardGrid">
+            <div class="adm-card-empty">加载中…</div>
+          </div>
+
+          <!-- 用户排盘记录详情面板 -->
+          <div class="adm-detail-panel" id="divDetailPanel" style="display:none">
+            <div class="adm-detail-head">
+              <button class="adm-back-btn" onclick="closeDivDetail()">← 返回</button>
+              <span class="adm-detail-title" id="divDetailTitle"></span>
+            </div>
+            <div class="adm-table-wrap" style="margin-top:0.5rem">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>占卜事项</th>
+                    <th>起卦方式</th>
+                    <th>起卦时间</th>
+                    <th class="adm-th-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="divDetailTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 建议管理 ===== -->
+        <section class="adm-tab" id="tab-suggestions">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">用户建议</h2>
+            <div class="adm-sec-meta" id="sugMeta"></div>
+          </div>
+          <div class="adm-card-grid" id="sugCardGrid">
+            <div class="adm-card-empty">加载中…</div>
+          </div>
+
+          <!-- 用户建议详情面板 -->
+          <div class="adm-detail-panel" id="sugDetailPanel" style="display:none">
+            <div class="adm-detail-head">
+              <button class="adm-back-btn" onclick="closeSugDetail()">← 返回</button>
+              <span class="adm-detail-title" id="sugDetailTitle"></span>
+            </div>
+            <div id="sugDetailCards" style="margin-top:0.5rem"></div>
+          </div>
+        </section>
+
+        <!-- ===== 参考书籍 ===== -->
+        <section class="adm-tab" id="tab-books">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">参考书籍</h2>
+            <div class="adm-sec-meta" id="booksMeta"></div>
+          </div>
+          <div class="adm-books-toolbar">
+            <select id="booksFolderFilter" class="adm-select-sm" onchange="loadBooks()">
+              <option value="">全部文件夹</option>
+            </select>
+            <select id="booksCatFilter" class="adm-select-sm" onchange="loadBooks()">
+              <option value="">全部分类</option>
+              <option value="bazi">四柱八字</option>
+              <option value="ziwei">紫微斗数</option>
+              <option value="meihua">梅花易数</option>
+              <option value="liuyao">六爻</option>
+              <option value="qimen">奇门遁甲</option>
+              <option value="yijing">易经（通用）</option>
+              <option value="liuren">六壬</option>
+              <option value="fengshui">风水</option>
+              <option value="xiangshu">相术</option>
+              <option value="general">通用术数</option>
+            </select>
+            <button class="adm-btn-primary adm-btn-sm" onclick="openAddBook()">+ 添加书籍</button>
+            <button class="adm-btn-sm" onclick="batchIngest()" id="btnBatchIngest" style="margin-left:8px;background:#b8960a;color:#fff;border:none;border-radius:14px;padding:0.4rem 1rem;cursor:pointer">📥 全部入库</button>
+          </div>
+          <div class="adm-table-wrap">
+            <table class="adm-table" id="booksTable">
+              <thead>
+                <tr>
+                  <th>书名</th>
+                  <th>文件夹</th>
+                  <th>分类</th>
+                  <th>作者</th>
+                  <th>状态</th>
+                  <th>分块数</th>
+                  <th>添加时间</th>
+                  <th class="adm-th-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="booksTbody">
+                <tr><td colspan="8" class="adm-empty">加载中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 书籍详情/编辑面板 -->
+          <div class="adm-detail-panel" id="booksDetailPanel" style="display:none">
+            <div class="adm-detail-head">
+              <button class="adm-back-btn" onclick="closeBooksDetail()">← 返回列表</button>
+              <span class="adm-detail-title" id="booksDetailTitle"></span>
+            </div>
+            <form id="bookEditForm" style="margin-top:0.8rem">
+              <input type="hidden" id="bookEditId">
+              <div class="adm-field">
+                <label>书名</label>
+                <input type="text" id="bookEditTitle" class="adm-input" required>
+              </div>
+              <div class="adm-field">
+                <label>文件夹</label>
+                <input type="text" id="bookEditFolder" class="adm-input" placeholder="如：术数、易经">
+              </div>
+              <div class="adm-field">
+                <label>分类</label>
+                <select id="bookEditCat" class="adm-select-sm">
+                  <option value="bazi">四柱八字</option>
+                  <option value="ziwei">紫微斗数</option>
+                  <option value="meihua">梅花易数</option>
+                  <option value="liuyao">六爻</option>
+                  <option value="qimen">奇门遁甲</option>
+                  <option value="yijing">易经（通用）</option>
+                  <option value="general">通用术数</option>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>作者</label>
+                <input type="text" id="bookEditAuthor" class="adm-input" placeholder="如：徐子平">
+              </div>
+              <div class="adm-field">
+                <label>简介</label>
+                <textarea id="bookEditDesc" class="adm-textarea" rows="3" placeholder="书籍简介…"></textarea>
+              </div>
+              <div class="adm-field">
+                <label>全文内容 <span class="adm-field-hint">（用于向量知识库入库）</span></label>
+                <textarea id="bookEditContent" class="adm-textarea" rows="12" placeholder="粘贴书籍全文…"></textarea>
+              </div>
+              <p class="adm-err" id="bookEditErr"></p>
+              <p class="adm-ok" id="bookEditOk" style="display:none"></p>
+              <div class="adm-modal-actions" style="padding:0">
+                <button type="submit" class="adm-btn-primary">保存</button>
+                <button type="button" class="adm-btn-ghost" onclick="closeBooksDetail()">取消</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ===== 系统设置 ===== -->
+        <section class="adm-tab" id="tab-settings">
+          <h2 class="adm-sec-title">系统设置</h2>
+          <div class="adm-settings-list">
+            <div class="adm-setting-row">
+              <div class="adm-setting-info">
+                <span class="adm-setting-name">AI 模型</span>
+                <span class="adm-setting-desc" id="settingModel">deepseek-v4-flash</span>
+              </div>
+              <span class="adm-setting-muted">当前配置</span>
+            </div>
+            <div class="adm-setting-row">
+              <div class="adm-setting-info">
+                <span class="adm-setting-name">管理密码</span>
+                <span class="adm-setting-desc">••••••</span>
+              </div>
+              <button class="adm-btn-sm" id="btnChangePwd">修改密码</button>
+            </div>
+            <div class="adm-setting-row">
+              <div class="adm-setting-info">
+                <span class="adm-setting-name">服务器时间</span>
+                <span class="adm-setting-desc" id="settingTime"></span>
+              </div>
+              <span class="adm-setting-muted">系统</span>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========== 模态弹窗 ========== -->
+  <div class="adm-overlay" id="admOverlay" style="display:none"></div>
+
+  <!-- 修改密码 -->
+  <div class="adm-modal" id="modalPwd" style="display:none">
+    <h3>修改管理密码</h3>
+    <form id="pwdForm">
+      <div class="adm-field">
+        <label>当前密码</label>
+        <input type="password" id="pwdCurrent" placeholder="输入当前密码" required>
+      </div>
+      <div class="adm-field">
+        <label>新密码</label>
+        <input type="password" id="pwdNew" placeholder="输入新密码（至少6位）" required>
+      </div>
+      <div class="adm-field">
+        <label>确认新密码</label>
+        <input type="password" id="pwdConfirm" placeholder="再次输入新密码" required>
+      </div>
+      <p class="adm-err" id="pwdErr"></p>
+      <p class="adm-ok" id="pwdOk" style="display:none"></p>
+      <div class="adm-modal-actions">
+        <button type="submit" class="adm-btn-primary">确认修改</button>
+        <button type="button" class="adm-btn-ghost" onclick="closePwdModal()">取消</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 删除确认 -->
+  <div class="adm-modal" id="modalConfirm" style="display:none">
+    <h3 id="confirmTitle">确认操作</h3>
+    <p id="confirmMsg"></p>
+    <div class="adm-modal-actions">
+      <button class="adm-btn-danger" id="confirmBtn">确认删除</button>
+      <button class="adm-btn-ghost" onclick="closeConfirm()">取消</button>
+    </div>
+  </div>
+
+  <!-- Token 编辑弹窗 -->
+  <div class="adm-modal" id="modalToken" style="display:none">
+    <h3>编辑 Token 用量</h3>
+    <div class="adm-field">
+      <label id="tokenUserLabel">用户</label>
+      <input type="number" id="tokenInput" min="0" step="100" placeholder="输入新用量数值" required>
+    </div>
+    <p class="adm-err" id="tokenErr"></p>
+    <p class="adm-ok" id="tokenOk" style="display:none"></p>
+    <div class="adm-modal-actions">
+      <button class="adm-btn-primary" onclick="saveToken()">保存</button>
+      <button class="adm-btn-ghost" onclick="closeTokenModal()">取消</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="/js/admin.js?v=16"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════
+   AI三千问 · 登录/注册 — 极简白风 (moxin 灵感)
+   ═══════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #faf8f5;
+  color: #1a1a1a;
+  font-family: "Noto Sans SC", "Public Sans", -apple-system, sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-card h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #1a1a1a;
+  margin-bottom: 0.15rem;
+}
+
+.auth-card .sub {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 1.8rem;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.auth-form label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #333;
+  margin-top: 0.3rem;
+}
+
+.auth-form label:first-child { margin-top: 0; }
+
+.auth-form input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-form input:focus {
+  border-color: #d4c9b0;
+  box-shadow: 0 0 0 3px rgba(184,150,10,0.08);
+}
+
+.auth-form input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 0.62rem;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #fff;
+  background: #b8960a;
+  box-shadow: 0 2px 8px rgba(184,150,10,0.25);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-btn:hover { opacity: 0.85; }
+.auth-btn:active { box-shadow: 0 2px 8px rgba(184,150,10,0.3); }
+
+.auth-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.auth-error {
+  font-size: 0.78rem;
+  color: #c55;
+  min-height: 1.2em;
+  margin-top: 0.2rem;
+}
+
+/* 验证码行 */
+.sms-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.sms-row input {
+  flex: 1;
+}
+.sms-btn {
+  flex-shrink: 0;
+  padding: 0 1rem;
+  border: 1px solid #ccc;
+  border-radius: 14px;
+  background: #faf8f5;
+  font-size: 0.82rem;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.sms-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #999;
+}
+.sms-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.auth-link {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 1.2rem;
+}
+
+.auth-link a {
+  color: #b8960a;
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(184,150,10,0.3);
+  transition: border-color 0.2s;
+}
+
+.auth-link a:hover {
+  border-bottom-color: #b8960a;
+}
+
+.auth-back {
+  display: block;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #bbb;
+  text-decoration: none;
+  margin-top: 1.2rem;
+  transition: color 0.2s;
+}
+
+.auth-back:hover { color: #666; }
+
+/* ===== Responsive ===== */
+@media (max-width: 500px) {
+  .auth-wrapper { padding: 1.5rem 1.2rem; }
+  .auth-card h1 { font-size: 1.35rem; }
+  .auth-form input { padding: 0.6rem 0.8rem; }
+}

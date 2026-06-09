@@ -1,0 +1,25 @@
+# Sensitive config
+server/config.js
+
+# Runtime data (user database, admin credentials, JWT secret)
+data/
+
+# Dependencies
+server/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+
+# RAG vector store data
+server/rag_chroma_db/

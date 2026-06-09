@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>提交建议 · AI三千问</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f2ec;
+  --border: #e8e3d8;
+  --border-active: #d4c9b0;
+  --accent: #b8960a;
+  --accent-dim: #9a8b7a;
+  --text: #1a1a1a;
+  --text-dim: #777777;
+  --text-muted: #aaaaaa;
+  --radius: 12px;
+  --radius-md: 14px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --star: #d4c9b0;
+  --star-active: #b8960a;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  background:var(--bg); color:var(--text);
+  font-family:"Noto Sans SC", -apple-system, sans-serif;
+  min-height:100vh; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.sg-wrap {
+  max-width:560px; margin:0 auto; padding:2rem 1.2rem 3rem;
+}
+.sg-header { text-align:center; padding:1rem 0 1.5rem; }
+.sg-back {
+  display:inline-flex; align-items:center; gap:0.3rem;
+  font-size:0.75rem; color:var(--text-dim); text-decoration:none;
+  padding:0.35rem 0.7rem; border-radius:10px;
+  transition:all 0.2s var(--ease); margin-bottom:0.8rem;
+}
+.sg-back:hover { color:var(--text); background:var(--bg-hover); }
+.sg-title {
+  font-family:"Noto Serif SC", serif;
+  font-size:1.3rem; font-weight:600;
+  letter-spacing:0.1em; color:var(--text);
+}
+.sg-sub {
+  font-size:0.78rem; color:var(--text-muted);
+  margin-top:0.3rem; letter-spacing:0.05em;
+}
+
+/* ===== 融合卡片 ===== */
+.sg-ratings-card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:var(--radius-md);
+  padding:0.8rem 1.2rem 0.4rem;
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  margin-bottom:0.7rem;
+}
+.sg-ratings-card .sg-card-title {
+  font-size:0.75rem; color:var(--text-dim);
+  letter-spacing:0.04em; margin-bottom:0.5rem;
+}
+.sg-rating-row {
+  display:flex; align-items:center; gap:0.5rem;
+  padding:0.45rem 0;
+  border-bottom:1px solid #f5f5f5;
+}
+.sg-rating-row:last-of-type { border-bottom:none; }
+.sg-rating-name {
+  font-size:0.76rem; color:var(--text);
+  letter-spacing:0.03em; flex-shrink:0;
+}
+.sg-stars {
+  display:flex; gap:0.15rem; align-items:center;
+  margin-left:auto;
+}
+.sg-star {
+  font-size:1.25rem; cursor:pointer;
+  color:var(--star); transition:all 0.15s var(--ease);
+  user-select:none; line-height:1;
+}
+.sg-star.active { color:var(--star-active); }
+.sg-star-label {
+  font-size:0.65rem; color:var(--text-muted);
+  margin-left:0.3rem; width:3.6rem; text-align:left;
+  flex-shrink:0; display:inline-block;
+}
+
+/* ===== 文本框卡片 ===== */
+.sg-text-card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-left:3px solid var(--border-active);
+  border-radius:var(--radius-md);
+  padding:0.9rem 1.2rem;
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  margin-bottom:0.7rem;
+}
+.sg-text-card .sg-card-title {
+  font-size:0.75rem; color:var(--text-dim);
+  letter-spacing:0.04em; margin-bottom:0.5rem;
+}
+.sg-textarea {
+  width:100%; min-height:110px; padding:0.65rem 0.75rem;
+  font-family:"Noto Sans SC", sans-serif;
+  font-size:0.83rem; line-height:1.6;
+  background:var(--bg); color:var(--text);
+  border:1px solid var(--border); border-radius:10px;
+  outline:none; resize:vertical;
+  transition:border-color 0.2s var(--ease);
+}
+.sg-textarea:focus { border-color:var(--border-active); }
+.sg-textarea::placeholder { color:var(--text-muted); }
+.sg-char-counter {
+  text-align:right; font-size:0.65rem; color:var(--text-muted);
+  margin-top:0.3rem; letter-spacing:0.02em;
+}
+
+/* Submit */
+.sg-submit {
+  display:block; width:100%; padding:0.65rem 1rem;
+  font-size:0.88rem; font-weight:500;
+  font-family:"Noto Sans SC", sans-serif;
+  background:var(--accent); color:#fff;
+  border:none; border-radius:14px; cursor:pointer;
+  letter-spacing:0.06em;
+  box-shadow:0 2px 8px rgba(184,150,10,0.25);
+  transition:all 0.2s var(--ease); margin-top:1rem;
+}
+.sg-submit:hover { opacity:0.85; }
+.sg-submit:active { transform:scale(0.98); }
+.sg-submit:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* Login prompt */
+.sg-login-required {
+  text-align:center; padding:3rem 1.5rem; display:none;
+}
+.sg-login-required .cg-icon { font-size:2.4rem; margin-bottom:0.5rem; opacity:0.4; }
+.sg-login-required .cg-title { font-size:0.95rem; font-weight:500; margin-bottom:0.15rem; letter-spacing:0.03em; }
+.sg-login-required .cg-desc { font-size:0.76rem; color:var(--text-dim); margin-bottom:1.2rem; }
+.sg-login-required .cg-btn {
+  display:inline-block; padding:0.4rem 1.3rem; font-size:0.82rem;
+  border-radius:14px; text-decoration:none; font-family:inherit;
+  background:var(--accent); color:#fff;
+  box-shadow:0 2px 8px rgba(184,150,10,0.25);
+  transition:all 0.2s var(--ease); letter-spacing:0.02em;
+}
+.sg-login-required .cg-btn:hover { opacity:0.85; }
+
+/* Success */
+.sg-success { display:none; text-align:center; padding:3rem 1.5rem; }
+.sg-success-icon { font-size:2.5rem; margin-bottom:0.8rem; }
+.sg-success-title {
+  font-family:"Noto Serif SC", serif;
+  font-size:1.1rem; color:var(--text);
+  letter-spacing:0.06em; margin-bottom:0.3rem;
+}
+.sg-success-desc { font-size:0.8rem; color:var(--text-dim); margin-bottom:1.5rem; }
+
+.sg-hint { font-size:0.68rem; color:var(--text-muted); text-align:center; margin-top:1.5rem; }
+
+@media (max-width:420px) {
+  .sg-rating-name { font-size:0.72rem; }
+  .sg-star { font-size:1.1rem; }
+  .sg-rating-row { padding:0.38rem 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="sg-wrap">
+
+  <div class="sg-header">
+    <a href="/" class="sg-back">← 返回首页</a>
+    <div class="sg-title">我们需要你宝贵的建议</div>
+    <div class="sg-sub">你的每一条反馈，都在帮我们变得更好</div>
+  </div>
+
+  <!-- ===== 融合评测卡片 ===== -->
+  <div id="sgForm">
+
+    <div class="sg-ratings-card">
+      <div class="sg-card-title">给各个维度打个分吧</div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">总体评价</span>
+        <div class="sg-stars" data-rating="overall">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_overall">请评分</span>
+        </div>
+      </div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">UI 界面舒适度</span>
+        <div class="sg-stars" data-rating="ui">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_ui">请评分</span>
+        </div>
+      </div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">功能适用度</span>
+        <div class="sg-stars" data-rating="feature">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_feature">请评分</span>
+        </div>
+      </div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">AI 解析准确度</span>
+        <div class="sg-stars" data-rating="ai">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_ai">请评分</span>
+        </div>
+      </div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">响应速度</span>
+        <div class="sg-stars" data-rating="responseSpeed">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_responseSpeed">请评分</span>
+        </div>
+      </div>
+
+      <div class="sg-rating-row">
+        <span class="sg-rating-name">解析内容丰富度</span>
+        <div class="sg-stars" data-rating="accuracy">
+          <span class="sg-star" data-score="1">☆</span>
+          <span class="sg-star" data-score="2">☆</span>
+          <span class="sg-star" data-score="3">☆</span>
+          <span class="sg-star" data-score="4">☆</span>
+          <span class="sg-star" data-score="5">☆</span>
+          <span class="sg-star-label" id="label_accuracy">请评分</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg-text-card">
+      <div class="sg-card-title">具体建议 <span style="color:var(--text-muted);font-size:0.65rem;">（必填）</span></div>
+      <textarea class="sg-textarea" id="sgContent" placeholder="说说你的想法… 比如想增加什么功能、哪里不好用" maxlength="4000" oninput="updateCharCount()"></textarea>
+      <div class="sg-char-counter" id="charCounter">0 / 4000</div>
+    </div>
+
+    <button class="sg-submit" id="sgSubmitBtn" onclick="submitSuggestion()">提交建议 ✦</button>
+    <div class="sg-hint">你的信息仅管理员可见</div>
+  </div>
+
+  <!-- 登录提示 -->
+  <div class="sg-login-required" id="sgLoginRequired">
+    <div class="cg-icon">🔒</div>
+    <div class="cg-title">登录后提交建议</div>
+    <div class="cg-desc">登录后才可以提交建议，让我知道你是谁</div>
+    <a href="/login/" class="cg-btn">去登录</a>
+  </div>
+
+  <!-- Success -->
+  <div class="sg-success" id="sgSuccess">
+    <div class="sg-success-icon">✓</div>
+    <div class="sg-success-title">感谢你的建议</div>
+    <div class="sg-success-desc">每一条反馈都会被认真对待</div>
+  </div>
+
+</div>
+
+<script>
+function getCookie(n){var m=document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'));return m?decodeURIComponent(m[2]):null;}
+var authToken = getCookie('sqw_token');
+var ratings = {};
+var labelTexts = {
+  overall: ['请评分', '很差', '较差', '一般', '满意', '非常满意'],
+  ui: ['请评分', '很不舒适', '不太舒适', '一般', '舒适', '非常舒适'],
+  feature: ['请评分', '完全不适用', '不太适用', '一般', '适用', '非常适用'],
+  ai: ['请评分', '完全不准确', '不太准确', '一般', '准确', '非常准确'],
+  responseSpeed: ['请评分', '非常慢', '较慢', '一般', '较快', '非常快'],
+  accuracy: ['请评分', '很贫乏', '不够丰富', '一般', '丰富', '非常丰富'],
+};
+
+// Check login on load
+(function(){
+  if (!authToken) {
+    document.getElementById('sgForm').style.display = 'none';
+    document.getElementById('sgLoginRequired').style.display = 'block';
+  }
+})();
+
+document.querySelectorAll('.sg-stars').forEach(function(container) {
+  var name = container.dataset.rating;
+  var stars = container.querySelectorAll('.sg-star');
+  var labels = labelTexts[name];
+
+  stars.forEach(function(star) {
+    star.addEventListener('click', function() {
+      var score = parseInt(this.dataset.score);
+      ratings[name] = score;
+      stars.forEach(function(s) {
+        var sScore = parseInt(s.dataset.score);
+        s.textContent = sScore <= score ? '★' : '☆';
+        s.classList.toggle('active', sScore <= score);
+      });
+      var label = document.getElementById('label_' + name);
+      if (label) label.textContent = labels[score] || score + ' 星';
+    });
+
+    star.addEventListener('mouseenter', function() {
+      var score = parseInt(this.dataset.score);
+      stars.forEach(function(s) {
+        var sScore = parseInt(s.dataset.score);
+        if (!s.classList.contains('active')) {
+          s.style.color = sScore <= score ? 'var(--star-active)' : '';
+        }
+      });
+    });
+    star.addEventListener('mouseleave', function() {
+      stars.forEach(function(s) {
+        if (!s.classList.contains('active')) s.style.color = '';
+      });
+    });
+  });
+});
+
+function updateCharCount() {
+  var el = document.getElementById('sgContent');
+  var len = el.value.length;
+  document.getElementById('charCounter').textContent = len + ' / 4000';
+}
+
+async function submitSuggestion() {
+  var btn = document.getElementById('sgSubmitBtn');
+  var content = document.getElementById('sgContent').value.trim();
+  if (!content) { document.getElementById('sgContent').focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = '提交中…';
+  try {
+    var res = await fetch('/api/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({
+        overall: ratings.overall || 0, ui: ratings.ui || 0, feature: ratings.feature || 0,
+        ai: ratings.ai || 0, responseSpeed: ratings.responseSpeed || 0, accuracy: ratings.accuracy || 0,
+        content: content,
+      }),
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || '提交失败');
+    document.getElementById('sgForm').style.display = 'none';
+    document.getElementById('sgSuccess').style.display = 'block';
+  } catch (e) {
+    alert('提交失败: ' + e.message + '，请稍后重试');
+    btn.disabled = false;
+    btn.textContent = '提交建议 ✦';
+  }
+}
+</script>
+</body>
+</html>

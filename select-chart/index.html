@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>选择命盘 · AI三千问</title>
+<link rel="stylesheet" href="/css/auth.css?v=1780828613">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  .module-label { font-size: 0.78rem; color: #999; margin-bottom: 1.2rem; }
+  .module-label .icon { font-size: 1rem; margin-right: 0.2rem; }
+  .module-label .name { font-weight: 500; color: #555; }
+
+  .chart-list { display:flex; flex-direction:column; gap:0.5rem; }
+
+  .mc-card {
+    display:flex; align-items:center;
+    padding:1rem 1.05rem;
+    background:#fff;
+    border:1px solid #e8e3d8;
+    border-left:3px solid #b8960a;
+    border-radius:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+    cursor:pointer;
+    transition:all 0.25s;
+  }
+  .mc-card:active { transform:scale(0.98); }
+
+  .mc-card .card-zodiac {
+    width:2.6rem; height:2.6rem;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; flex-shrink:0;
+    background:linear-gradient(135deg, rgba(184,150,10,0.1), transparent);
+    margin-right:0.8rem;
+  }
+
+  .mc-card .card-body { flex:1; min-width:0; }
+  .mc-card .card-name {
+    font-size:0.92rem; font-weight:500;
+    color:#1a1a1a; letter-spacing:0.04em;
+    margin-bottom:0.2rem;
+  }
+  .mc-card .card-info {
+    font-size:0.7rem; color:#777;
+    display:flex; flex-wrap:wrap;
+    gap:0.3rem 0.6rem;
+  }
+  .mc-card .card-info span {
+    display:inline-flex; align-items:center; gap:0.15rem;
+  }
+
+  .mc-card .card-arrow {
+    font-size:1.2rem; color:#aaa;
+    flex-shrink:0; padding:0.3rem;
+    border-radius:50%;
+    transition:all 0.2s;
+  }
+  .mc-card .card-arrow:hover { background:rgba(0,0,0,0.04); }
+
+  .add-btn {
+    display:block; width:100%; padding:0.62rem;
+    margin-top:1rem;
+    font-size:0.85rem; font-family:inherit; font-weight:500;
+    color:#fff; background:#b8960a;
+    border:none; border-radius:14px; cursor:pointer;
+    text-align:center; text-decoration:none;
+    letter-spacing:0.04em;
+    box-shadow:0 2px 8px rgba(184,150,10,0.25);
+    transition:opacity 0.2s;
+  }
+  .add-btn:hover { opacity:0.85; }
+
+  .empty-state { text-align:center; padding:1.5rem 0 0.8rem; }
+  .empty-state .es-icon { font-size:2.4rem; margin-bottom:0.5rem; opacity:0.5; }
+  .empty-state .es-title { font-size:0.9rem; font-weight:500; color:#1a1a1a; letter-spacing:0.04em; }
+  .empty-state .es-desc { font-size:0.78rem; color:#999; margin-top:0.2rem; }
+
+  .loading-msg { text-align:center; padding:2rem 0; color:#bbb; font-size:0.82rem; }
+</style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h1>AI 三千问</h1>
+    <p class="sub">选择命盘开始排盘</p>
+
+    <div class="module-label">
+      <span class="icon"></span>
+      <span class="name"></span>
+    </div>
+
+    <div id="content-area">
+      <div class="loading-msg">加载中…</div>
+    </div>
+
+    <p class="auth-link" style="margin-top:0.8rem">
+      <a href="/charts/?action=create" id="create-link">新建命盘</a>
+    </p>
+
+    <a href="/" class="auth-back">← 返回首页</a>
+  </div>
+</div>
+
+<script src="/js/auth.js?v=5"></script>
+<script src="/js/charts-store.js?v=4"></script>
+<script>
+(function() {
+  'use strict';
+
+  var params = new URLSearchParams(window.location.search);
+  var type = params.get('type') || 'charts';
+
+  var labels = { charts: '📜 四柱八字', ziwei: '🔮 紫微斗数', meihua: '🌸 梅花易数' };
+  var info = labels[type] || '📜 四柱八字';
+
+  document.querySelector('.icon').textContent = info.split(' ')[0];
+  document.querySelector('.name').textContent = info.split(' ').slice(1).join(' ');
+
+  document.getElementById('create-link').href = '/charts/?action=create&from=' + type;
+
+  if (!AUTH.isLoggedIn()) {
+    document.getElementById('content-area').innerHTML =
+      '<div class="empty-state">' +
+        '<div class="es-icon">🔒</div>' +
+        '<p class="es-title">登录后使用</p>' +
+        '<p class="es-desc">保存多份命盘，随时查看排盘</p>' +
+      '</div>' +
+      '<a href="/login/" class="add-btn">登录</a>' +
+      '<p class="auth-link" style="margin-top:0.6rem"><a href="/register/">注册</a></p>';
+    return;
+  }
+
+  (async function() {
+    var content = document.getElementById('content-area');
+    var charts;
+
+    try {
+      charts = await ChartsStore.getAll();
+    } catch(e) {
+      content.innerHTML =
+        '<div class="empty-state">' +
+          '<p class="es-desc" style="color:#c55">加载失败，请稍后重试</p>' +
+        '</div>';
+      return;
+    }
+
+    if (!charts || !charts.length) {
+      content.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="es-icon">📜</div>' +
+          '<p class="es-title">还没有命盘</p>' +
+          '<p class="es-desc">新建一份命盘，即可开始' + (type === 'ziwei' ? '紫微斗数' : type === 'meihua' ? '梅花易数' : '四柱八字') + '排盘</p>' +
+        '</div>' +
+        '<a href="/charts/?action=create&from=' + type + '" class="add-btn">＋ 新建命盘</a>';
+      return;
+    }
+
+    var SHICHEN = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+    var ZODIAC_EMOJI = ['🐀','🐂','🐯','🐰','🐲','🐍','🐴','🐑','🐵','🐔','🐶','🐷'];
+
+    var h = '<div class="chart-list">';
+    for (var i = 0; i < charts.length; i++) {
+      var x = charts[i];
+      var zIdx = (x.birth.year - 4) % 12;
+      if (zIdx < 0) zIdx += 12;
+      var zodiacEmoji = ZODIAC_EMOJI[zIdx];
+      var genderLabel = x.gender === 'male' ? '男' : '女';
+      var scIdx = Math.floor(((x.birth.hour ?? 12) + 1) % 24 / 2);
+      var dateStr = x.birth.year + '.' + pad(x.birth.month) + '.' + pad(x.birth.day);
+      var createStr = x.createdAt ? formatDate(x.createdAt) : '';
+      var detailUrl = '/my-charts/?id=' + x.id;
+
+      var baziShort = '';
+      if (x.bazi) {
+        var bp = x.bazi.split(' ');
+        if (bp.length >= 3) baziShort = bp[2];
+      }
+
+      h +=
+        '<div class="mc-card" onclick="location.href=\'' + detailUrl + '\'">' +
+          '<div class="card-zodiac">' + zodiacEmoji + '</div>' +
+          '<div class="card-body">' +
+            '<div class="card-name">' + esc(x.name) +
+              (baziShort ? ' <span style="font-size:0.75rem;color:#9a8b7a;font-weight:400">' + baziShort + '</span>' : '') +
+            '</div>' +
+            '<div class="card-info">' +
+              '<span>' + genderLabel + '</span>' +
+              '<span>' + dateStr + '</span>' +
+              '<span>' + SHICHEN[scIdx] + '时</span>';
+      if (createStr) h += '<span>创建于 ' + createStr + '</span>';
+      h += '</div>' +
+          '</div>' +
+          '<div class="card-arrow">›</div>' +
+        '</div>';
+    }
+    h += '</div>';
+
+    content.innerHTML = h;
+  })();
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function formatDate(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+})();
+</script>
+</body>
+</html>
