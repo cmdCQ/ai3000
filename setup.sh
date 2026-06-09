@@ -3,181 +3,250 @@
 # AI三千问 - 一键安装配置脚本
 # ============================================
 # 用法: bash setup.sh
-# 说明: 本脚本会引导你完成全程配置
-#       包括 MySQL、Node.js、Python RAG 服务
+# 说明: 自动检查环境、安装依赖、初始化数据库、
+#       配置 RAG 向量知识库，引导用户完成部署
 # ============================================
 
+# 遇到错误是否继续？部分非致命错误跳过
+# 致命错误（缺 Node.js/Python）直接退出
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo ""
-echo "=========================================="
-echo "  🚀 AI三千问 安装配置向导"
-echo "=========================================="
-echo ""
+# ─── 颜色工具 ─────────────────────────────
 
-# ─── 前置检查 ─────────────────────────────
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-echo "📋 正在检查环境..."
+ok()   { echo -e "  ${GREEN}✅${NC} $1"; }
+warn() { echo -e "  ${YELLOW}⚠️  $1${NC}"; }
+fail() { echo -e "  ${RED}❌ $1${NC}"; [ "$2" = "fatal" ] && exit 1; }
+info() { echo -e "  ${CYAN}ℹ️  $1${NC}"; }
+hr()   { echo "────────────────────────────────────────────"; }
 
-# Node.js
-if command -v node &>/dev/null; then
-    echo "  ✅ Node.js: $(node -v)"
-else
-    echo "  ❌ 未安装 Node.js，请先安装: https://nodejs.org/"
-    exit 1
-fi
-
-# npm
-if command -v npm &>/dev/null; then
-    echo "  ✅ npm: $(npm -v)"
-else
-    echo "  ❌ 未安装 npm"
-    exit 1
-fi
-
-# Python3
-if command -v python3 &>/dev/null; then
-    echo "  ✅ Python3: $(python3 --version)"
-else
-    echo "  ❌ 未安装 Python3，请先安装"
-    exit 1
-fi
-
-# MySQL
-if command -v mysql &>/dev/null || command -v mariadb &>/dev/null; then
-    echo "  ✅ MySQL/MariaDB 已安装"
-else
-    echo "  ⚠️  未检测到 MySQL，请确保已安装并运行"
-fi
+# ─── 标题 ─────────────────────────────────
 
 echo ""
-echo "=========================================="
+echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║${NC}        🚀 AI三千问  安装配置向导        ${CYAN}║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
-# ─── 步骤 1: 安装 Node.js 依赖 ────────────
+# ─── 1. 前置检查 ─────────────────────────
 
-echo "📦 [1/5] 安装 Node.js 依赖..."
-cd "$SCRIPT_DIR/server"
-npm install
-echo "  ✅ Node.js 依赖安装完成"
-cd "$SCRIPT_DIR"
+echo "📋 ${YELLOW}检查环境...${NC}"
 echo ""
 
-# ─── 步骤 2: 配置后端 ──────────────────────
+check_node() {
+  if ! command -v node &>/dev/null; then
+    fail "未安装 Node.js (https://nodejs.org/)" fatal
+  fi
+  ok "Node.js $(node -v)"
+}
 
-echo "⚙️ [2/5] 配置后端服务..."
+check_npm() {
+  if ! command -v npm &>/dev/null; then
+    fail "未安装 npm" fatal
+  fi
+  ok "npm $(npm -v)"
+}
+
+check_python() {
+  if ! command -v python3 &>/dev/null; then
+    fail "未安装 Python3 (请先安装 python3 + python3-venv)" fatal
+  fi
+  ok "Python3 $(python3 --version)"
+}
+
+check_pip() {
+  if ! python3 -c "import pip" &>/dev/null 2>&1; then
+    warn "pip3 未安装，尝试安装..."
+    python3 -m ensurepip --upgrade &>/dev/null 2>&1 || {
+      fail "pip3 安装失败，请手动安装: apt install python3-pip (Debian) 或 brew install python (macOS)" fatal
+    }
+  fi
+  ok "pip3 可用"
+}
+
+check_venv() {
+  if ! python3 -c "import venv" &>/dev/null 2>&1; then
+    fail "python3-venv 未安装，请先安装:\n     apt install python3-venv   (Debian/Ubuntu)\n     yum install python3-virtualenv  (CentOS)\n     brew install python   (macOS)" fatal
+  fi
+  ok "python3-venv 可用"
+}
+
+check_mysql() {
+  if command -v mysql &>/dev/null; then
+    ok "MySQL 客户端已安装"
+  elif command -v mariadb &>/dev/null; then
+    ok "MariaDB 客户端已安装"
+  else
+    warn "未检测到 MySQL/MariaDB 客户端，请确保已安装并运行"
+  fi
+}
+
+check_node
+check_npm
+check_python
+check_pip
+check_venv
+check_mysql
+
+echo ""
+
+# ─── 2. 安装 Node 依赖 ───────────────────
+
+echo -e "${YELLOW}[1/5]${NC} 安装 Node.js 依赖..."
+hr
+(
+  cd "$SCRIPT_DIR/server"
+  npm install --loglevel=warn 2>&1 | sed 's/^/  /'
+)
+ok "Node.js 依赖安装完成"
+echo ""
+
+# ─── 3. 配置后端 ─────────────────────────
+
+echo -e "${YELLOW}[2/5]${NC} 配置后端服务..."
+hr
 
 if [ ! -f "$SCRIPT_DIR/server/config.js" ]; then
-    cp "$SCRIPT_DIR/server/config.example.js" "$SCRIPT_DIR/server/config.js"
-    echo "  📝 已创建 config.js 模板"
-    echo ""
-    echo "  ⚠️  请编辑 server/config.js，填入以下信息："
-    echo "      1. DeepSeek API Key（必填）"
-    echo "      2. MySQL 数据库连接信息（必填）"
-    echo "      3. 管理员密码（必填）"
-    echo "      4. 阿里云短信配置（选填，用于手机号验证码登录）"
-    echo ""
-    read -p "  编辑完成后按 Enter 继续..."
+  cp "$SCRIPT_DIR/server/config.example.js" "$SCRIPT_DIR/server/config.js"
+  ok "已创建 config.js 模板"
+  echo ""
+  echo "  请编辑 ${CYAN}server/config.js${NC}，填入以下信息："
+  echo "    ${GREEN}①${NC} DeepSeek API Key — 必填，从 platform.deepseek.com 获取"
+  echo "    ${GREEN}②${NC} MySQL 连接信息    — 必填（host/user/password/database）"
+  echo "    ${GREEN}③${NC} 管理员密码        — 必填，登录后台用"
+  echo "    ${GREEN}④${NC} 阿里云短信配置    — 选填，用于手机号验证码登录"
+  echo ""
+  read -p "  编辑完成后按 Enter 继续... " _
 else
-    echo "  ✅ config.js 已存在，跳过"
+  ok "config.js 已存在，跳过"
 fi
 
 echo ""
 
-# ─── 步骤 3: 初始化 MySQL 数据库 ──────────
+# ─── 4. 初始化 MySQL ─────────────────────
 
-echo "🗄️ [3/5] 初始化 MySQL 数据库..."
+echo -e "${YELLOW}[3/5]${NC} 初始化 MySQL 数据库..."
+hr
 
-echo "  即将创建数据库并导入表结构..."
-echo "  请确保 MySQL 服务已启动"
+echo "  即将创建 ai3000 数据库并导入表结构，请确保 MySQL 服务已启动"
 echo ""
 
-# 尝试 MySQL 连接
-if mysql -u root -e "SELECT 1" &>/dev/null 2>&1; then
-    echo "  🔌 使用 root (unix_socket) 连接 MySQL..."
+do_mysql() {
+  if mysql -u root -e "SELECT 1" &>/dev/null 2>&1; then
+    echo -n "  🔌 连接 MySQL (unix_socket)... "
     mysql -u root -e "CREATE DATABASE IF NOT EXISTS ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     mysql -u root ai3000 < "$SCRIPT_DIR/server/schema.sql"
-    echo "  ✅ MySQL 数据库初始化完成！"
-    echo "  📌 数据库: ai3000"
-    echo "  📌 用户: root（请在生产环境中创建独立用户）"
+    echo -e "${GREEN}成功${NC}"
+    return 0
+  fi
+  return 1
+}
+
+if do_mysql; then
+  ok "数据库初始化完成"
+  info "数据库: ai3000 / 用户: root（建议生产环境创建独立用户）"
 else
-    echo "  ⚠️  无法自动连接 MySQL，请手动执行："
-    echo "     mysql -u root -p"
-    echo "     > CREATE DATABASE ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    echo "     > SOURCE server/schema.sql;"
-    read -p "  完成后按 Enter 继续..."
+  warn "无法自动连接 MySQL，请手动执行："
+  echo ""
+  echo "    mysql -u root -p"
+  echo "    > CREATE DATABASE ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+  echo "    > USE ai3000;"
+  echo "    > SOURCE server/schema.sql;"
+  echo ""
+  read -p "  完成后按 Enter 继续... " _
 fi
 
 echo ""
 
-# ─── 步骤 4: 安装并配置 RAG 服务 ──────────
+# ─── 5. 配置 RAG ─────────────────────────
 
-echo "🧠 [4/5] 安装配置 RAG 向量知识库..."
+echo -e "${YELLOW}[4/5]${NC} 安装配置 RAG 向量知识库..."
+hr
 
-# 检测是否已有 config.yaml
+# 5a. 配置文件
 if [ ! -f "$SCRIPT_DIR/server/rag/config.yaml" ]; then
-    cp "$SCRIPT_DIR/server/rag/config.yaml.example" "$SCRIPT_DIR/server/rag/config.yaml"
-    echo "  📝 已创建 RAG 配置模板"
-    echo ""
-    echo "  ⚠️  请编辑 server/rag/config.yaml，填入以下信息："
-    echo "      1. embedding 模式（推荐 local，免费）"
-    echo "      2. DeepSeek API Key（必填，与 server/config.js 保持一致）"
-    echo "      3. 向量库存储路径（默认 ./vector_db）"
-    echo ""
-    read -p "  编辑完成后按 Enter 继续..."
+  cp "$SCRIPT_DIR/server/rag/config.yaml.example" "$SCRIPT_DIR/server/rag/config.yaml"
+  echo ""
+  ok "已创建 RAG 配置模板"
+  echo ""
+  echo "  请编辑 ${CYAN}server/rag/config.yaml${NC}，填入以下信息："
+  echo "    ${GREEN}①${NC} embedding 模式 — 推荐 local（免费本地 ONNX 模型）"
+  echo "    ${GREEN}②${NC} DeepSeek API Key — 必填，与 server/config.js 保持一致"
+  echo "    ${GREEN}③${NC} 向量库存储路径 — 默认 ./vector_db"
+  echo ""
+  read -p "  编辑完成后按 Enter 继续... " _
 else
-    echo "  ✅ config.yaml 已存在，跳过"
+  ok "config.yaml 已存在，跳过"
 fi
 
-echo "  📦 安装 Python 依赖..."
-cd "$SCRIPT_DIR/server/rag"
-
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    echo "  ✅ Python 虚拟环境已创建"
-fi
-
-source venv/bin/activate
-pip install -r requirements.txt -q
-deactivate
-echo "  ✅ Python 依赖安装完成"
-
-cd "$SCRIPT_DIR"
+# 5b. Python 虚拟环境 + 依赖
+echo ""
+echo "  📦 安装 Python 虚拟环境和依赖..."
 echo ""
 
-# ─── 步骤 5: 下载古籍 ────────────────────
+VENV_DIR="$SCRIPT_DIR/server/rag/venv"
 
-echo "📚 [5/5] 准备古籍知识库..."
+if [ ! -d "$VENV_DIR" ]; then
+  python3 -m venv "$VENV_DIR"
+  ok "虚拟环境已创建"
+fi
+
+# 用 venv 的 pip 直接安装，避免 source/subshell 问题
+"$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/server/rag/requirements.txt" -q 2>&1 | sed 's/^/  /'
+ok "Python 依赖安装完成"
+
+echo ""
+
+# ─── 6. 古籍下载指引 ─────────────────────
+
+echo -e "${YELLOW}[5/5]${NC} 准备古籍知识库..."
+hr
 
 BOOKS_DIR="$SCRIPT_DIR/server/data/books"
 mkdir -p "$BOOKS_DIR"
 
-if [ "$(ls -A "$BOOKS_DIR" 2>/dev/null | wc -l)" -gt 0 ]; then
-    echo "  ✅ 古籍文本已存在 ($(ls "$BOOKS_DIR" | wc -l) 个文件)"
+FILE_COUNT=$(ls -1 "$BOOKS_DIR"/*.txt 2>/dev/null | wc -l)
+
+if [ "$FILE_COUNT" -gt 0 ]; then
+  ok "古籍文本已存在（${FILE_COUNT} 个文件）"
 else
-    echo ""
-    echo "  📖 古籍文本文件需要单独下载："
-    echo "  🔗 https://github.com/garychowcmu/daizhigev20/tree/master/易藏"
-    echo ""
-    echo "  下载后请解压到: $BOOKS_DIR"
-    echo ""
-    read -p "  完成后按 Enter 继续..."
+  echo ""
+  echo "  📖 古籍文本文件需要单独下载（300+ 本命理古籍）："
+  echo ""
+  echo -e "    🔗 ${CYAN}https://github.com/garychowcmu/daizhigev20/tree/master/易藏${NC}"
+  echo ""
+  echo "  下载后解压到: ${YELLOW}$BOOKS_DIR${NC}"
+  echo "  目录里放的是 .txt 格式的纯文本文件"
+  echo ""
+  read -p "  完成后按 Enter 继续... " _
 fi
 
 echo ""
-echo "=========================================="
+
+# ─── 完成 ────────────────────────────────
+
+echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║${NC}          ✅ 安装配置完成！               ${GREEN}║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
 echo ""
-echo "  ✅ 安装配置完成！"
-echo ""
-echo "  ▶  启动主服务:"
+echo -e "  ${GREEN}▶${NC} 启动主服务:"
 echo "      cd server && node auth-server.js"
 echo ""
-echo "  ▶  启动 RAG 服务（新终端）:"
+echo -e "  ${GREEN}▶${NC} 启动 RAG 服务（另开终端）:"
 echo "      cd server/rag && bash start.sh"
 echo ""
-echo "  ▶  访问地址: http://localhost:3301"
+echo -e "  ${GREEN}▶${NC} 访问地址:"
+echo "      http://localhost:3301"
 echo ""
-echo "=========================================="
+echo -e "  ${GREEN}▶${NC} 古籍入库（启动后）:"
+echo "      在管理后台 → 古籍管理 → 书籍入库"
+echo "      或命令行: cd server/rag && source venv/bin/activate && python scripts/ingest.py ..."
+echo ""
