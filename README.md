@@ -4,7 +4,7 @@
 
 一个基于 DeepSeek API 的玄学解忧 AI 应用，提供梅花易数、六爻等占卜方式的自动排盘和 AI 智能解析。
 
-👉 **GitHub 仓库：** [github.com/cmdCQ/AI3000](https://github.com/cmdCQ/AI3000)
+👉 **GitHub 仓库：** [github.com/cmdCQ/ai3000](https://github.com/cmdCQ/ai3000)
 
 ## 功能
 
