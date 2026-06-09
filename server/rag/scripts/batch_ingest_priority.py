@@ -32,7 +32,14 @@ embedder = Embedder(
 )
 vector_store = VectorStore(persist_directory=config["vector_store"]["persist_directory"])
 
-db = pymysql.connect(host="localhost", user="root", database="ai3000", charset="utf8mb4", unix_socket="/var/run/mysqld/mysqld.sock")
+db = pymysql.connect(
+    host=os.environ.get("MYSQL_HOST", "localhost"),
+    port=int(os.environ.get("MYSQL_PORT", "3306")),
+    user=os.environ.get("MYSQL_USER", "root"),
+    password=os.environ.get("MYSQL_PASSWORD", ""),
+    database=os.environ.get("MYSQL_DATABASE", "ai3000"),
+    charset="utf8mb4",
+)
 
 def ingest_book(book):
     """入库一本书"""

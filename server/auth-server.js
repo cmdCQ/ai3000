@@ -142,7 +142,7 @@ function verifyPassword(password, stored) {
 
 // ===== Admin (hashed credentials stored in file) =====
 const defaultAdmin = {
-  username: 'CQA',
+  username: config.admin.username || 'CQA',
   passwordHash: hashPassword(config.admin.password),
   loginAttempts: 0,
   lockedUntil: 0,
@@ -154,9 +154,9 @@ if (!admin.passwordHash || admin.passwordHash.length < 20) {
   admin.passwordHash = hashPassword(config.admin.password);
   writeJSON(ADMIN_FILE, admin);
 }
-// Ensure username
+// Ensure username (use config value if admin file is new)
 if (!admin.username) {
-  admin.username = 'CQA';
+  admin.username = config.admin.username || 'CQA';
   writeJSON(ADMIN_FILE, admin);
 }
 

@@ -9,13 +9,22 @@ pydantic==2.10.3
 # 向量数据库
 chromadb==0.5.23
 
-# LLM + Embedding 调用（阿里云百炼兼容 OpenAI API）
+# 本地 Embedding 模型（local 模式）
+fastembed==0.3.5
+
+# LLM + Embedding 调用（remote 模式用阿里云百炼）
 openai==1.57.4
 httpx==0.28.1
 
 # 文本处理
 tiktoken==0.8.0
 jieba==0.42.1
+
+# 数据科学（fastembed 依赖，但显式声明）
+numpy==1.26.4
+
+# MySQL 连接（批量入库用）
+pymysql==1.1.1
 
 # 工具
 pyyaml==6.0.2

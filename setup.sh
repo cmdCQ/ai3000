@@ -95,24 +95,19 @@ echo "  即将创建数据库并导入表结构..."
 echo "  请确保 MySQL 服务已启动"
 echo ""
 
-# 检查 MySQL 连接方式
+# 尝试 MySQL 连接
 if mysql -u root -e "SELECT 1" &>/dev/null 2>&1; then
-    # root 无密码（unix_socket）
     echo "  🔌 使用 root (unix_socket) 连接 MySQL..."
     mysql -u root -e "CREATE DATABASE IF NOT EXISTS ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     mysql -u root ai3000 < "$SCRIPT_DIR/server/schema.sql"
     echo "  ✅ MySQL 数据库初始化完成！"
     echo "  📌 数据库: ai3000"
     echo "  📌 用户: root（请在生产环境中创建独立用户）"
-elif mysql -u root -p -e "SELECT 1" &>/dev/null 2>&1; then
-    echo "  🔑 MySQL root 需要密码..."
-    mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    mysql -u root -p ai3000 < "$SCRIPT_DIR/server/schema.sql"
 else
     echo "  ⚠️  无法自动连接 MySQL，请手动执行："
     echo "     mysql -u root -p"
     echo "     > CREATE DATABASE ai3000 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    echo "     > source server/schema.sql;"
+    echo "     > SOURCE server/schema.sql;"
     read -p "  完成后按 Enter 继续..."
 fi
 
