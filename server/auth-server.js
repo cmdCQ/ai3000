@@ -709,13 +709,16 @@ async function handle(req, res) {
     }
   }
 
-  // GET /api/mhys-records/:id — 获取单条排盘记录（未登录用户可查匿名记录）
+  // GET /api/mhys-records/:id — 获取单条排盘记录（管理员可查看任意记录）
   if (req.method === 'GET' && pathname.startsWith('/api/mhys-records/') && pathname.split('/').length === 4) {
     const payload = checkAuth(req);
     const id = pathname.split('/').pop();
     try {
       let rows;
-      if (payload) {
+      if (payload && payload.role === 'admin') {
+        // 管理员：查看任意记录
+        [rows] = await db.query('SELECT * FROM mhys_records WHERE id = ?', [id]);
+      } else if (payload) {
         [rows] = await db.query('SELECT * FROM mhys_records WHERE id = ? AND (user_id = ? OR user_id IS NULL)', [id, payload.username]);
       } else {
         [rows] = await db.query('SELECT * FROM mhys_records WHERE id = ? AND user_id IS NULL', [id]);
@@ -821,13 +824,16 @@ async function handle(req, res) {
     }
   }
 
-  // GET /api/liuyao-records/:id — 获取单条排盘记录（未登录用户可查匿名记录）
+  // GET /api/liuyao-records/:id — 获取单条排盘记录（管理员可查看任意记录）
   if (req.method === 'GET' && pathname.startsWith('/api/liuyao-records/') && pathname.split('/').length === 4) {
     const payload = checkAuth(req);
     const id = pathname.split('/').pop();
     try {
       let rows;
-      if (payload) {
+      if (payload && payload.role === 'admin') {
+        // 管理员：查看任意记录
+        [rows] = await db.query('SELECT * FROM liuyao_records WHERE id = ?', [id]);
+      } else if (payload) {
         [rows] = await db.query('SELECT * FROM liuyao_records WHERE id = ? AND (user_id = ? OR user_id IS NULL)', [id, payload.username]);
       } else {
         [rows] = await db.query('SELECT * FROM liuyao_records WHERE id = ? AND user_id IS NULL', [id]);
@@ -1190,45 +1196,63 @@ async function handle(req, res) {
     }
   }
 
-  // GET /api/admin/divination-users — 管理员查看有排盘记录的用户（分组卡片）
+  // GET /api/admin/divination-users — 管理员查看有排盘记录的用户（分组卡片，含梅花+六爻）
   if (req.method === 'GET' && pathname === '/api/admin/divination-users') {
     const payload = parseToken(req);
     if (!payload || payload.role !== 'admin') return json(res, { error: '未授权' }, 401);
     try {
-      const [rows] = await db.query(
-        `SELECT user_id, COUNT(*) as count, MAX(created_at) as latest
-         FROM mhys_records
-         WHERE user_id IS NOT NULL AND user_id != ''
-         GROUP BY user_id
-         ORDER BY latest DESC`
+      // 合并两个表的用户
+      const [mhysRows] = await db.query(
+        `SELECT user_id, COUNT(*) as cnt, MAX(created_at) as latest
+         FROM mhys_records WHERE user_id IS NOT NULL AND user_id != '' GROUP BY user_id`
       );
-      return json(res, rows.map(r => ({
-        userId: r.user_id,
-        count: r.count,
-        latestAt: r.latest,
-      })));
+      const [lyRows] = await db.query(
+        `SELECT user_id, COUNT(*) as cnt, MAX(created_at) as latest
+         FROM liuyao_records WHERE user_id IS NOT NULL AND user_id != '' GROUP BY user_id`
+      );
+      // 合并
+      const userMap = {};
+      for (const r of mhysRows) {
+        userMap[r.user_id] = { userId: r.user_id, mhysCount: r.cnt, liuyaoCount: 0, latestAt: r.latest };
+      }
+      for (const r of lyRows) {
+        if (userMap[r.user_id]) {
+          userMap[r.user_id].liuyaoCount = r.cnt;
+          if (new Date(r.latest) > new Date(userMap[r.user_id].latestAt)) userMap[r.user_id].latestAt = r.latest;
+        } else {
+          userMap[r.user_id] = { userId: r.user_id, mhysCount: 0, liuyaoCount: r.cnt, latestAt: r.latest };
+        }
+      }
+      const users = Object.values(userMap).sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt));
+      return json(res, users);
     } catch (e) {
       console.error('Admin divination users error:', e);
       return json(res, { error: '数据库错误' }, 500);
     }
   }
 
-  // GET /api/admin/divination-records/:userId — 管理员查看某用户的排盘记录
+  // GET /api/admin/divination-records/:userId — 管理员查看某用户的所有排盘记录（梅花+六爻）
   if (req.method === 'GET' && pathname.startsWith('/api/admin/divination-records/')) {
     const payload = parseToken(req);
     if (!payload || payload.role !== 'admin') return json(res, { error: '未授权' }, 401);
-    const userId = pathname.split('/').pop();
+    const urlParts = pathname.split('/');
+    const userId = urlParts[urlParts.length - 1];
     try {
-      const [rows] = await db.query(
+      // 并行查询两个表
+      const [mhysRows] = await db.query(
         'SELECT id, user_id, topic, method, result_data, created_at FROM mhys_records WHERE user_id = ? ORDER BY created_at DESC',
         [userId]
       );
-      return json(res, rows.map(r => {
-        let divTime = null, recTime = null;
+      const [lyRows] = await db.query(
+        'SELECT id, user_id, topic, method, result_data, created_at FROM liuyao_records WHERE user_id = ? ORDER BY created_at DESC',
+        [userId]
+      );
+
+      const mapRow = (r, type) => {
+        let divTime = null;
         try {
           const rd = typeof r.result_data === 'string' ? JSON.parse(r.result_data) : r.result_data;
           if (rd && rd.divinationTime) divTime = rd.divinationTime;
-          if (rd && rd.recordTime) recTime = rd.recordTime;
         } catch(e) {}
         return {
           id: r.id,
@@ -1238,8 +1262,16 @@ async function handle(req, res) {
           resultData: r.result_data,
           createdAt: r.created_at,
           divinationTime: divTime,
+          type: type,
         };
-      }));
+      };
+
+      const records = [
+        ...mhysRows.map(r => mapRow(r, 'mhys')),
+        ...lyRows.map(r => mapRow(r, 'liuyao')),
+      ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      return json(res, records);
     } catch (e) {
       console.error('Admin divination records error:', e);
       return json(res, { error: '数据库错误' }, 500);
@@ -1808,9 +1840,14 @@ function buildLiuyaoPrompt(topic, hexagrams, ragContext) {
 
   const bg = hexagrams.benGua || {};
   const bng = hexagrams.bianGua || {};
+  var gender = hexagrams.gender;
+  var genderLabel = '未知';
+  if (gender === 'male') genderLabel = '男';
+  else if (gender === 'female') genderLabel = '女';
 
   let p = '以下是一组六爻排盘数据。\n\n';
-  p += '【求测事项】' + topic + '\n\n';
+  p += '【求测事项】' + topic + '\n';
+  p += '【求测者性别】' + genderLabel + '（用于确定用神——男测婚姻/妻财以妻财爻为用神，女测婚姻/丈夫以官鬼爻为用神，男测事业以官鬼爻为用神，女测事业以子孙爻或父母爻为用神，请根据具体事项和性别灵活取用）\n\n';
   p += '【卦象】\n';
   p += '本卦：' + (bg.name || '未知') + '\n';
   p += '变卦：' + (bng.name || '未知') + '\n';

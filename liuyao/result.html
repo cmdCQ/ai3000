@@ -605,6 +605,7 @@ function renderLiuyaoHex(gua, label, isBen) {
 var currentGua = 'ben';
 var g = null;
 var currentTopic = '';
+var currentGender = 'male';
 var currentRecordId = null;
 var savedAnalysis = null;
 
@@ -685,12 +686,18 @@ function renderAnalysis() {
 function renderResult(result) {
   g = result.gua;
   currentTopic = result.topic || '';
+  currentGender = result.gender || 'male';
   currentGua = 'ben';
   var h = '';
   h += '<div class="card card-flush">';
   h += '<div class="card-title">排盘信息</div>';
   h += '<table class="info-table">';
   if (result.topic) h += '<tr><td class="td-label">事项</td><td class="td-value">'+escHtml(result.topic)+'</td></tr>';
+  if (result.gender) {
+    var genderLabel = result.gender === 'female' ? '女' : '男';
+    var genderIcon = result.gender === 'female' ? '♀' : '♂';
+    h += '<tr><td class="td-label">性别</td><td class="td-value">'+genderIcon+' '+genderLabel+'</td></tr>';
+  }
   h += '<tr><td class="td-label">卦式</td><td class="td-value">'+(METHOD_NAMES[result.method]||result.method)+'</td></tr>';
   if (result.divinationTime) {
     h += '<tr><td class="td-label">时间</td><td class="td-value">'+escHtml(result.divinationTime)+'</td></tr>';
@@ -833,10 +840,17 @@ async function load() {
   var area = document.getElementById('contentArea');
   var urlParams = new URLSearchParams(window.location.search);
   var id = urlParams.get('id');
+  var isAdmin = urlParams.get('admin') === '1';
 
   if (id) {
     try {
-      var token = AUTH.getToken();
+      var token;
+      if (isAdmin) {
+        // 管理员查看：使用 admin token
+        token = localStorage.getItem('sqw_admin_token');
+      } else {
+        token = AUTH.getToken();
+      }
       var headers = token ? { 'Authorization':'Bearer '+token } : {};
       var resp = await fetch('/api/liuyao-records/'+id, { headers:headers });
       if (!resp.ok) {
@@ -1005,6 +1019,7 @@ async function sendFollowUp() {
     context: prevAnswer,
     recordId: currentRecordId,
     hexagrams: {
+      gender: currentGender,
       benGua: { name:g.benGua.name, upper:g.benGua.upper, lower:g.benGua.lower, upperTri:g.benGua.upperTri, lowerTri:g.benGua.lowerTri },
       bianGua: { name:g.bianGua.name, upper:g.bianGua.upper, lower:g.bianGua.lower, upperTri:g.bianGua.upperTri, lowerTri:g.bianGua.lowerTri }
     }
@@ -1151,6 +1166,7 @@ async function startAIStream() {
       topic: currentTopic,
       recordId: currentRecordId,
       hexagrams: {
+        gender: currentGender,
         benGua: { name:g.benGua.name, upper:g.benGua.upper, lower:g.benGua.lower, upperTri:g.benGua.upperTri, lowerTri:g.benGua.lowerTri },
         bianGua: { name:g.bianGua.name, upper:g.bianGua.upper, lower:g.bianGua.lower, upperTri:g.bianGua.upperTri, lowerTri:g.bianGua.lowerTri }
       }

@@ -714,10 +714,17 @@ async function load() {
   var area = document.getElementById('contentArea');
   var urlParams = new URLSearchParams(window.location.search);
   var id = urlParams.get('id');
+  var isAdmin = urlParams.get('admin') === '1';
 
   if (id) {
     try {
-      var token = AUTH.getToken();
+      var token;
+      if (isAdmin) {
+        // 管理员查看：使用 admin token
+        token = localStorage.getItem('sqw_admin_token');
+      } else {
+        token = AUTH.getToken();
+      }
       var headers = token ? { 'Authorization':'Bearer '+token } : {};
       var resp = await fetch('/api/mhys-records/'+id, { headers:headers });
       if (!resp.ok) {

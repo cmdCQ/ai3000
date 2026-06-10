@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>后台管理 · AI三千问</title>
-<link rel="stylesheet" href="/css/admin.css?v=1749475000">
+<link rel="stylesheet" href="/css/admin.css?v=1749475100">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -201,7 +201,17 @@
               <button class="adm-back-btn" onclick="closeDivDetail()">← 返回</button>
               <span class="adm-detail-title" id="divDetailTitle"></span>
             </div>
-            <div class="adm-table-wrap" style="margin-top:0.5rem">
+            <!-- 子标签：梅花易数 / 六爻 -->
+            <div class="adm-subtabs" id="divSubtabs" style="display:flex;gap:0;margin-bottom:0.8rem;border-bottom:2px solid var(--border);">
+              <button class="adm-subtab active" data-subtab="mhys" onclick="switchDivSubtab('mhys')">
+                🌸 梅花易数 <span class="adm-subtab-cnt" id="divCntMhys">0</span>
+              </button>
+              <button class="adm-subtab" data-subtab="liuyao" onclick="switchDivSubtab('liuyao')">
+                ⚡ 六爻 <span class="adm-subtab-cnt" id="divCntLiuyao">0</span>
+              </button>
+            </div>
+            <!-- 梅花易数表格 -->
+            <div class="adm-table-wrap" id="divTableMhys" style="margin-top:0.3rem">
               <table class="adm-table">
                 <thead>
                   <tr>
@@ -211,7 +221,21 @@
                     <th class="adm-th-right">操作</th>
                   </tr>
                 </thead>
-                <tbody id="divDetailTbody"></tbody>
+                <tbody id="divDetailTbodyMhys"></tbody>
+              </table>
+            </div>
+            <!-- 六爻表格 -->
+            <div class="adm-table-wrap" id="divTableLiuyao" style="display:none;margin-top:0.3rem">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>占卜事项</th>
+                    <th>起卦方式</th>
+                    <th>起卦时间</th>
+                    <th class="adm-th-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="divDetailTbodyLiuyao"></tbody>
               </table>
             </div>
           </div>
@@ -420,6 +444,6 @@
 
 </div>
 
-<script src="/js/admin.js?v=16"></script>
+<script src="/js/admin.js?v=17"></script>
 </body>
 </html>

@@ -94,6 +94,23 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
 .record-entry .re-text { font-size:0.82rem; font-weight:500; }
 .record-entry .re-arrow { font-size:0.8rem; color:var(--text-muted); }
 
+/* 性别选择器 */
+.gender-row { display:flex; gap:0.5rem; }
+.gender-btn {
+  flex:1; padding:0.6rem 1rem; font-size:0.85rem; font-family:inherit;
+  background:var(--bg); color:var(--text-dim);
+  border:1.5px solid var(--border); border-radius:var(--radius);
+  cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; justify-content:center; gap:0.35rem;
+}
+.gender-btn:hover { border-color:var(--text-muted); color:var(--text); }
+.gender-btn.active {
+  border-color:var(--accent); color:var(--accent);
+  background:rgba(139,109,82,0.06);
+  font-weight:500;
+}
+.gender-icon { font-size:1rem; }
+
 @media (max-width:400px) {
   .mh-wrapper { padding:1rem 1rem 4rem; }
 }
@@ -248,7 +265,20 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
     <input type="text" id="topicInput" class="input-field" placeholder="选填" maxlength="100">
   </div>
 
-  <!-- 2. 起卦时间 -->
+  <!-- 2. 性别（六爻用神取法依赖性别） -->
+  <div class="card">
+    <div class="card-title">🧑 性别</div>
+    <div class="gender-row" id="genderRow">
+      <button type="button" class="gender-btn active" data-gender="male" onclick="selectGender('male')">
+        <span class="gender-icon">♂</span> 男
+      </button>
+      <button type="button" class="gender-btn" data-gender="female" onclick="selectGender('female')">
+        <span class="gender-icon">♀</span> 女
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. 起卦时间 -->
   <div class="card">
     <div class="card-title">🕐 起卦时间</div>
     <div class="tp-time-row" id="timeDisplayRow" onclick="openTimePicker()">
@@ -257,7 +287,7 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
     </div>
   </div>
 
-  <!-- 3. 起卦方式 -->
+  <!-- 4. 起卦方式 -->
   <div class="card">
     <div class="card-title">☯ 起卦方式</div>
     <div class="method-selector" id="methodSelector">
@@ -282,10 +312,10 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
     <div id="methodParams"></div>
   </div>
 
-  <!-- 4. 开始排盘按钮 -->
+  <!-- 5. 开始排盘按钮 -->
   <button type="button" class="btn-primary" id="startBtn" onclick="startDivination(event)">开始排盘</button>
 
-  <!-- 5. 排盘记录 -->
+  <!-- 6. 排盘记录 -->
   <a href="/liuyao/history.html" class="record-entry">
     <div class="re-left">
       <span class="re-text">排盘记录</span>
@@ -758,6 +788,7 @@ function autoDivination() {
 
 // ===== 当前选中的方法 =====
 var currentMethod = 'coin';
+var currentGender = 'male';
 
 function toggleDropdown() {
   var dd=document.getElementById('methodDropdown');
@@ -870,9 +901,10 @@ async function startDivination(e) {
     default: resetBtn(); btn.textContent='开始排盘'; return;
   }
 
-  // ===== 3. 统一：topic / 起卦时间 / 农历 / 跳转 =====
+  // ===== 3. 统一：topic / gender / 起卦时间 / 农历 / 跳转 =====
   var topic = document.getElementById('topicInput').value.trim();
   result.topic = topic;
+  result.gender = currentGender;
   // 起卦时间
   if (selectedTime) {
     result.divinationTime = selectedTime.year+'-'+String(selectedTime.month).padStart(2,'0')+'-'+String(selectedTime.day).padStart(2,'0')+' '+
@@ -921,6 +953,14 @@ function init() {
   setInterval(updateTimeDisplay, 30000);
   renderMethodParams();
   document.getElementById('startBtn').disabled = false;
+}
+
+// ===== 性别切换 =====
+function selectGender(gender) {
+  currentGender = gender;
+  document.querySelectorAll('.gender-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.gender === gender);
+  });
 }
 
 // 页面离开前重置按钮，确保 bfcache 恢复时按钮状态正常

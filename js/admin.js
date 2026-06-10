@@ -323,7 +323,10 @@ function closeChartDetail() {
   document.getElementById('chartsMeta').style.display = '';
 }
 
-// ========================= 占卜（用户分组 → 点击看详情 → 跳转页面） =========================
+// ========================= 占卜（用户分组 → 点击看详情 → 梅花/六爻子标签） =========================
+
+var _divRecordsCache = [];  // 缓存当前用户的所有排盘记录
+var _divUserId = '';
 
 async function loadDivUsers() {
   var grid = document.getElementById('divCardGrid');
@@ -342,11 +345,18 @@ async function loadDivUsers() {
 
     grid.innerHTML = users.map(function(u) {
       var phone = u.userId || '未知';
+      var mhysCnt = u.mhysCount || 0;
+      var lyCnt = u.liuyaoCount || 0;
+      var total = mhysCnt + lyCnt;
+      var desc = '';
+      if (mhysCnt > 0 && lyCnt > 0) desc = '🌸' + mhysCnt + '次梅花 · ⚡' + lyCnt + '次六爻';
+      else if (mhysCnt > 0) desc = '🌸' + mhysCnt + '次梅花易数';
+      else desc = '⚡' + lyCnt + '次六爻';
       return '<div class="adm-user-card" onclick="openDivDetail(\''+escAttr(phone)+'\')">'+
         '<div class="adm-card-avatar">☯</div>'+
         '<div class="adm-card-body">'+
           '<span class="adm-card-name mono">'+esc(phone)+'</span>'+
-          '<span class="adm-card-desc">'+u.count+' 次排盘</span>'+
+          '<span class="adm-card-desc">'+desc+'</span>'+
         '</div>'+
         '<div class="adm-card-time dim">'+fmtRel(u.latestAt)+'</div>'+
         '<span class="adm-card-arrow">→</span>'+
@@ -361,10 +371,15 @@ async function loadDivUsers() {
 }
 
 async function openDivDetail(userId) {
-  var tbody = document.getElementById('divDetailTbody');
+  _divUserId = userId;
+  _divRecordsCache = [];
+
+  var tMhys = document.getElementById('divDetailTbodyMhys');
+  var tLiuyao = document.getElementById('divDetailTbodyLiuyao');
   var title = document.getElementById('divDetailTitle');
   title.textContent = userId + ' 的排盘记录';
-  tbody.innerHTML = '<tr><td colspan="4" class="adm-empty">加载中…</td></tr>';
+  tMhys.innerHTML = '<tr><td colspan="4" class="adm-empty">加载中…</td></tr>';
+  tLiuyao.innerHTML = '<tr><td colspan="4" class="adm-empty">加载中…</td></tr>';
   document.getElementById('divDetailPanel').style.display = 'block';
   document.getElementById('divCardGrid').style.display = 'none';
   document.getElementById('divMeta').style.display = 'none';
@@ -372,36 +387,64 @@ async function openDivDetail(userId) {
   try {
     var res = await adminFetch('/divination-records/' + encodeURIComponent(userId));
     var records = await res.json();
+    _divRecordsCache = records;
 
-    if (!records.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="adm-empty">该用户暂无排盘记录</td></tr>';
-      return;
-    }
+    // 统计数量
+    var mhysCnt = records.filter(function(r) { return r.type === 'mhys'; }).length;
+    var lyCnt = records.filter(function(r) { return r.type === 'liuyao'; }).length;
+    document.getElementById('divCntMhys').textContent = mhysCnt;
+    document.getElementById('divCntLiuyao').textContent = lyCnt;
 
-    var methodNames = { num1:'数字起卦', num2:'数字起卦', time:'时间起卦', manual:'手动起卦', auto:'自动起卦' };
-    tbody.innerHTML = records.map(function(r) {
-      var resultUrl = '/mhys/result.html?id=' + r.id;
-      return '<tr>'+
-        '<td><a href="'+resultUrl+'" target="_blank" style="color:var(--text);text-decoration:none;">'+esc(r.topic||'(无事项)')+' ↗</a></td>'+
-        '<td class="dim">'+(methodNames[r.method]||r.method||'—')+'</td>'+
-        '<td class="dim">'+(r.divinationTime || fmtDate(r.createdAt))+'</td>'+
-        '<td class="adm-td-right"><button class="adm-del-btn" onclick="confirmDeleteDivRecord(\''+escAttr(r.id)+'\',\''+escAttr(r.topic||'未填写')+'\')">删除</button></td>'+
-        '</tr>';
-    }).join('');
+    // 默认显示梅花易数
+    switchDivSubtab('mhys');
   } catch(e) {
     console.error('Load user divination records failed', e);
-    tbody.innerHTML = '<tr><td colspan="4" class="adm-empty">加载失败</td></tr>';
+    tMhys.innerHTML = '<tr><td colspan="4" class="adm-empty">加载失败</td></tr>';
   }
+}
+
+function switchDivSubtab(type) {
+  // 更新子标签 active 样式
+  document.querySelectorAll('.adm-subtab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.subtab === type);
+  });
+
+  // 切换表格显示
+  document.getElementById('divTableMhys').style.display = (type === 'mhys') ? '' : 'none';
+  document.getElementById('divTableLiuyao').style.display = (type === 'liuyao') ? '' : 'none';
+
+  // 渲染对应表格
+  var filtered = _divRecordsCache.filter(function(r) { return r.type === type; });
+  var tbody = (type === 'mhys') ? document.getElementById('divDetailTbodyMhys') : document.getElementById('divDetailTbodyLiuyao');
+  var methodNames = { num1:'数字起卦', num2:'数字起卦', time:'时间起卦', manual:'手动起卦', auto:'自动起卦' };
+
+  if (!filtered.length) {
+    var label = (type === 'mhys') ? '梅花易数' : '六爻';
+    tbody.innerHTML = '<tr><td colspan="4" class="adm-empty">暂无' + label + '排盘记录</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(r) {
+    var resultUrl = (r.type === 'liuyao') ? '/liuyao/result.html?id=' + r.id + '&admin=1' : '/mhys/result.html?id=' + r.id + '&admin=1';
+    return '<tr>'+
+      '<td><a href="'+resultUrl+'" target="_blank" style="color:var(--text);text-decoration:none;">'+esc(r.topic||'(无事项)')+' ↗</a></td>'+
+      '<td class="dim">'+(methodNames[r.method]||r.method||'—')+'</td>'+
+      '<td class="dim">'+(r.divinationTime || fmtDate(r.createdAt))+'</td>'+
+      '<td class="adm-td-right"><button class="adm-del-btn" onclick="confirmDeleteDivRecord(\''+escAttr(r.id)+'\',\''+escAttr(r.topic||'未填写')+'\',\''+escAttr(r.type)+'\')">删除</button></td>'+
+      '</tr>';
+  }).join('');
 }
 
 function closeDivDetail() {
   document.getElementById('divDetailPanel').style.display = 'none';
   document.getElementById('divCardGrid').style.display = '';
   document.getElementById('divMeta').style.display = '';
+  _divRecordsCache = [];
+  _divUserId = '';
 }
 
-function confirmDeleteDivRecord(id, topic) {
-  _deleteTarget = { type: 'divination', id: id };
+function confirmDeleteDivRecord(id, topic, recType) {
+  _deleteTarget = { type: (recType === 'liuyao' ? 'liuyao_record' : 'mhys_record'), id: id };
   document.getElementById('confirmTitle').textContent = '删除排盘记录';
   document.getElementById('confirmMsg').textContent = '确定删除排盘记录「' + topic + '」吗？此操作不可恢复。';
   document.getElementById('confirmBtn').textContent = '确认删除';
@@ -433,7 +476,8 @@ async function doConfirmDelete() {
     let path;
     if (type === 'user') path = '/users/' + id;
     else if (type === 'chart') path = '/charts/' + id;
-    else if (type === 'divination') path = '/mhys-records/' + id;
+    else if (type === 'mhys_record') path = '/mhys-records/' + id;
+    else if (type === 'liuyao_record') path = '/liuyao-records/' + id;
     else return;
     const res = await adminFetch(path, { method: 'DELETE' });
     if (!res.ok) throw new Error('删除失败');
@@ -452,8 +496,8 @@ async function doConfirmDelete() {
     }
     else if (active && active.dataset.tab === 'divination') {
       if (document.getElementById('divDetailPanel').style.display !== 'none') {
-        var userId2 = document.getElementById('divDetailTitle').textContent.replace(' 的排盘记录', '');
-        openDivDetail(userId2);
+        // 重新加载当前用户详情
+        openDivDetail(_divUserId);
         loadDivUsers();
       } else {
         loadDivUsers();

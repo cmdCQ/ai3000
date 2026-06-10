@@ -365,6 +365,26 @@ body { overflow-x:hidden; }
   font-family:var(--serif); font-size:0.95rem; color:var(--text);
   letter-spacing:0.04em; font-weight:500;
 }
+
+/* 子标签（占卜详情：梅花易数 / 六爻） */
+.adm-subtabs { display:flex; gap:0; margin-bottom:0.8rem; border-bottom:2px solid var(--border); }
+.adm-subtab {
+  padding:0.45rem 1rem; font-size:0.75rem; font-family:var(--sans);
+  background:transparent; color:var(--text-muted);
+  border:none; border-bottom:2px solid transparent;
+  margin-bottom:-2px; cursor:pointer;
+  letter-spacing:0.03em; transition:all 0.2s;
+  display:flex; align-items:center; gap:0.4rem;
+}
+.adm-subtab:hover { color:var(--text); }
+.adm-subtab.active {
+  color:var(--text); border-bottom-color:var(--text);
+  font-weight:500;
+}
+.adm-subtab-cnt {
+  font-size:0.62rem; color:var(--text-muted);
+  background:var(--bg); padding:0.1rem 0.45rem; border-radius:8px;
+}
 @media (max-width:700px) {
   .adm-card-grid { grid-template-columns:repeat(2, 1fr); gap:0.4rem; }
   .adm-user-card { padding:0.7rem 0.7rem; }
