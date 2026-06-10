@@ -1105,21 +1105,41 @@ async function handle(req, res) {
       } catch (e) { /* 静默 */ }
     }
 
-    // RAG 检索：使用 liuyao + yijing 分类
+    // RAG 检索：使用 liuyao + yijing 分类，多维度检索
     let ragContext = '';
     let ragSources = [];
     try {
-      const searchQuery = topic || (hexagrams.benGua ? hexagrams.benGua.name + '卦' : '六爻解卦');
-      const ragRes = await fetch('http://localhost:8800/api/retrieve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, top_k: 3, categories: ['liuyao', 'yijing'], similarity_threshold: 0.3 }),
-      });
-      const ragData = await ragRes.json();
-      if (ragData.results && ragData.results.length > 0) {
-        ragContext = ragData.results.map((r, i) => `【古籍 ${i + 1}】《${r.book_name}》${r.chapter ? ' - ' + r.chapter : ''}\n${r.text}`).join('\n\n');
-        const seen = new Set();
-        ragSources = ragData.results.filter(r => { const k = r.book_name; return seen.has(k) ? false : seen.add(k); }).map(r => r.book_name);
+      const benGuaName = hexagrams.benGua ? hexagrams.benGua.name : '';
+      // 构建结构化检索查询：融合卦名+事项+断卦方法论关键要素
+      const searchQueries = [
+        topic ? (topic + ' ' + benGuaName) : (benGuaName || '六爻解卦'),
+        benGuaName + ' 用神 世应 动爻 六亲',
+        benGuaName + ' 空亡 月破 应期 生克',
+      ];
+      const allResults = [];
+      for (const q of searchQueries.slice(0, 2)) {  // 取前2个查询，避免太多
+        const ragRes = await fetch('http://localhost:8800/api/retrieve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, top_k: 3, categories: ['liuyao', 'yijing'], similarity_threshold: 0.3 }),
+        });
+        const ragData = await ragRes.json();
+        if (ragData.results) allResults.push(...ragData.results);
+      }
+      // 去重并按分数排序
+      const seen = new Set();
+      const unique = [];
+      allResults.sort((a, b) => b.score - a.score);
+      for (const r of allResults) {
+        const key = r.text.slice(0, 60);
+        if (!seen.has(key)) { seen.add(key); unique.push(r); }
+      }
+      const topResults = unique.slice(0, 5);
+      if (topResults.length > 0) {
+        ragContext = topResults.map((r, i) => `【古籍 ${i + 1}】《${r.book_name}》${r.chapter ? ' - ' + r.chapter : ''}
+${r.text}`).join('\n\n');
+        const seenBooks = new Set();
+        ragSources = topResults.filter(r => { const k = r.book_name; return seenBooks.has(k) ? false : seenBooks.add(k); }).map(r => r.book_name);
       }
     } catch (e) { console.error('Liuyao RAG error:', e.message); }
 
@@ -1835,7 +1855,7 @@ async function streamDeepSeek(prompt, res) {
 
 function buildLiuyaoPrompt(topic, hexagrams, ragContext) {
   if (!topic) {
-    return '你是一位六爻纳甲解卦师。用户还没说问什么事，请用一句话简短询问。';
+    return '你是一位六爻纳甲解卦师。用户还没说问什么事，请先回应排盘数据（本卦变卦名+世应位置），然后用一句话询问求测事项。';
   }
 
   const bg = hexagrams.benGua || {};
@@ -1845,34 +1865,110 @@ function buildLiuyaoPrompt(topic, hexagrams, ragContext) {
   if (gender === 'male') genderLabel = '男';
   else if (gender === 'female') genderLabel = '女';
 
-  let p = '以下是一组六爻排盘数据。\n\n';
+  let p = '以下是一组六爻排盘数据。请严格按照六爻断卦标准流程逐层分析。\n\n';
   p += '【求测事项】' + topic + '\n';
-  p += '【求测者性别】' + genderLabel + '（用于确定用神——男测婚姻/妻财以妻财爻为用神，女测婚姻/丈夫以官鬼爻为用神，男测事业以官鬼爻为用神，女测事业以子孙爻或父母爻为用神，请根据具体事项和性别灵活取用）\n\n';
+  p += '【求测者性别】' + genderLabel + '\n\n';
   p += '【卦象】\n';
   p += '本卦：' + (bg.name || '未知') + '\n';
   p += '变卦：' + (bng.name || '未知') + '\n';
   p += ((bg.upperTri && bg.upperTri.name) || '未知') + '上' + ((bg.lowerTri && bg.lowerTri.name) || '未知') + '下\n';
   p += ((bng.upperTri && bng.upperTri.name) || '未知') + '上' + ((bng.lowerTri && bng.lowerTri.name) || '未知') + '下\n\n';
 
-  p += '请按三段回复，每段以"---"分隔：\n\n';
-  p += '【一、回答】直接说结论（吉/凶/平/转机），结合爻变、六亲六神、动爻世应分析。大白话，不含推导术语。\n\n';
-  p += '【二、现状】用本卦世应和六神爻位说当前状况。大白话，不出现推导。\n\n';
-  p += '【三、解卦思路】推演：本卦定格局→动爻定变化→变卦断结局。分析世应生克、六亲分布象征、六神吉凶指向、卦宫五行。末尾提醒卦象非绝对。可含卦象术语。\n\n';
-  p += '避免绝对化断语，多用"可能""倾向"。用**加粗**标结论重点（会显示金色），###子标题适度。';
+  p += '══════ 断卦方法论（必须逐层执行） ══════\n\n';
+
+  p += '【第一层·定用神】\n';
+  p += '根据求测事项和性别确定用神：\n';
+  p += '- 男测事业/功名/官司/疾病 → 用神为官鬼爻\n';
+  p += '- 女测丈夫/感情对象 → 用神为官鬼爻\n';
+  p += '- 男测妻子/感情对象 → 用神为妻财爻\n';
+  p += '- 测财运/货物/金银 → 用神为妻财爻\n';
+  p += '- 测考试/文书/长辈/房屋 → 用神为父母爻\n';
+  p += '- 测子女/医药/宠物/解忧 → 用神为子孙爻\n';
+  p += '- 测兄弟朋友/口舌争执 → 用神为兄弟爻\n';
+  p += '生用神之爻为元神（吉），克用神之爻为忌神（凶）。用神多现时：取持世之爻优先，其次取临月日之爻，再次取月破/旬空之爻。\n\n';
+
+  p += '【第二层·看世应】\n';
+  p += '世爻为己身、为求测者；应爻为他人、为对方、为所测之事的环境。\n';
+  p += '- 世应相生相合 → 人我和谐，事易成\n';
+  p += '- 世应相克相冲 → 人我对立，事多阻\n';
+  p += '- 世爻旺相 → 自身状态好，有能力成事\n';
+  p += '- 世爻休囚空破 → 自身无力，被动受制\n';
+  p += '- 世应俱空 → 双方都不实在，事情虚无\n';
+  p += '- 应爻生世爻 → 对方主动有利于我\n\n';
+
+  p += '【第三层·察日月】\n';
+  p += '日辰为六爻之主宰，月建为万卦之提纲。日月生扶用神则吉，日月刑克用神则凶。\n';
+  p += '- 日月如君如将，爻神莫敢不从——旺动之爻也不敌日月之力\n';
+  p += '- 日建不受旬空之困，月建不落旬空——日月本身永不为空\n';
+  p += '- 月建定旺相休囚死：当令者旺、令生者相、生令者休、克令者囚、令克者死\n';
+  p += '- 月破之爻（月建冲之）当月无力，出月方可恢复\n';
+  p += '- 日冲静爻为暗动（短暂有力），日冲动爻为冲散（力减）\n\n';
+
+  p += '【第四层·辨动爻】\n';
+  p += '动爻是变化的发动机。动为始、变为终。\n';
+  p += '- 一爻独发其势最大，虽休囚亦能制旺爻（不敌日月除外）\n';
+  p += '- 多爻动时取阴爻为主（阴主未来），同阴同阳取上一爻\n';
+  p += '- 六爻皆动看变卦为主\n';
+  p += '- 动爻被日辰或变爻合住 → "动值合而绊住"，暂时不能发挥作用\n';
+  p += '- 变爻只能生克本动爻，不能生克本卦其他静爻\n';
+  p += '- 变爻空破死绝 → 动爻不受其生克\n\n';
+
+  p += '【第五层·析生克】\n';
+  p += '围绕用神分析六亲生克关系：\n';
+  p += '- 元神（生用神者）动 → 大吉，如时雨滋苗\n';
+  p += '- 忌神（克用神者）动 → 大凶，如秋霜杀草\n';
+  p += '- 贪生忘克：忌神动克用神，但若有爻生忌神，忌神转而"贪生"顾不上克用神 → 转吉\n';
+  p += '- 贪合忘克：忌神被日辰或他爻合住 → 减凶\n';
+  p += '- 连续相生：A生B、B生C、C生用神 → 力量传导，层层加强\n';
+  p += '- 六合卦 → 事易成；六冲卦 → 事易散（诉讼/分手/出行反以六冲为吉）\n\n';
+
+  p += '【第六层·断空亡与月破】\n';
+  p += '空亡之法重在辨别真假：\n';
+  p += '- 旺相之爻值空 → 过旬可用，非真空\n';
+  p += '- 月建生扶之爻值空 → 半空，暂不利\n';
+  p += '- 月建克之且值空 → 真空，彻底无用\n';
+  p += '- 动爻值空 → 不惟不空，反为全动（动不为空）\n';
+  p += '- 月破值空 → 空上加空，大凶\n';
+  p += '- 空于忌则吉（坏人不在），空于用则凶（主角缺席）\n';
+  p += '- 空逢冲而有用的前提：旺相有气，冲则填实\n\n';
+
+  p += '【第七层·推应期】\n';
+  p += '应期即事件发生的时间，从以下线索综合判断：\n';
+  p += '- 用神旬空 → 应期在出旬之日或冲空之日\n';
+  p += '- 用神入墓 → 应期在冲墓之日（如金入丑墓，未日冲开）\n';
+  p += '- 动爻被合绊 → 应期在冲合之日\n';
+  p += '- 月破之爻 → 应期在出月或值月之日\n';
+  p += '- 用神休囚 → 应期在长生/帝旺之日\n';
+  p += '- 忌神旺动 → 应期在忌神入墓/绝地之日（凶事应期）\n';
+  p += '- 静爻待冲 → 应期在冲动之日（暗动）\n\n';
+
+  p += '【结论公式】\n';
+  p += '用神旺相 + 元神生扶 + 忌神安静/空亡 → 大吉，事必成\n';
+  p += '用神旺相 + 忌神动但被合住/贪生忘克 → 先阻后成\n';
+  p += '用神休囚 + 元神动来生 → 有救，延迟但可成\n';
+  p += '用神休囚 + 忌神旺动克之 + 无元神救助 → 大凶，事不成\n';
+  p += '用神真空/月破 + 忌神当令 → 彻底无望\n\n';
+
+  p += '══════ 输出格式 ══════\n\n';
+  p += '请严格按以下结构回复，每段以"---"分隔：\n\n';
+  p += '【一、结论】直接说吉凶结论（吉/凶/平/转机/先难后成），1-2句话。结合用神旺衰与忌神动否。大白话，不用术语。\n\n';
+  p += '【二、现状分析】用人话描述当前状况：世应关系反映的双方状态、六神揭示的氛围（青龙主喜/朱雀主口舌/白虎主凶/玄武主暗昧）、爻位反映的事态阶段。不出现推导过程。\n\n';
+  p += '【三、解卦推演】按以上七层方法论逐步推演：定用神→看世应→察日月→辨动爻→析元神忌神生克→审空亡月破→推应期。每步引用卦中具体爻位和六亲六神。可含专业术语。末尾给出应期判断，并提醒卦象非绝对。\n\n';
+  p += '用**加粗**标结论重点，###子标题适度。避免绝对化断语，多用"可能""倾向"。';
 
   if (ragContext) {
-    p += '\n\n【参考古籍】请优先引用以下古籍佐证，注明出处：\n\n' + ragContext;
+    p += '\n\n【参考古籍】请优先引用以下古籍原文佐证，注明出处：\n\n' + ragContext;
   }
 
-  p += '\n\n【四、补充】末尾引导用户补充背景：「如有更多具体情况可补充，方便做更细致解读」——语气自然，单独一段。';
+  p += '\n\n【补充引导】末尾引导用户补充背景："如有更多具体情况可补充，方便做更细致解读"——语气自然，单独一段。';
   return p;
 }
 
 function buildLiuyaoFollowUpPrompt(topic, followUp, context, hexagrams) {
   var p = '针对「' + topic + '」的追问：\n\n';
-  p += '【之前解读】' + ((context || '').slice(-1000)) + '\n\n';
+  p += '【之前解读】' + ((context || '').slice(-1200)) + '\n\n';
   p += '【追问】' + followUp + '\n\n';
-  p += '直接回答追问，不重复完整分析。结构：\n【一、回答】——结论和建议，不用卦象术语。\n【二、思路】（可选）——一两句推演依据。';
+  p += '直接回答追问，不重复完整七层分析。聚焦追问涉及的层面（如问应期则重点推应期，问空亡则重点辨空亡真假）。结构：\n【回答】——结论和建议，不用卦象术语。\n【依据】——简短推演依据（1-3句，引用原卦爻位）。';
   return p;
 }
 
@@ -1886,7 +1982,7 @@ async function streamDeepSeekLiuyao(prompt, res) {
   const stream = await client.chat.completions.create({
     model: 'deepseek-v4-flash',
     messages: [
-      { role: 'system', content: '你是六爻纳甲解卦师，擅长六神、六亲、世应、卦宫的五行生克分析。回答清晰、理性、有启发性，避免绝对化断语，多用"可能""倾向"。可主动反问补充背景。' },
+      { role: 'system', content: '你是六爻纳甲解卦师。断卦必须严格遵循七层标准流程：①定用神（据事项性别取六亲）→②看世应（世为己应为人，分人我吉凶）→③察日月（日主月提定旺衰，爻不敌日月）→④辨动爻（动为变化之机，独发力量最大）→⑤析生克（元神生用则吉，忌神克用则凶，贪生贪合可忘克）→⑥审空亡月破（辨真空假空，空忌吉空用凶）→⑦推应期（出空填实、冲墓冲合、生旺墓绝）。输出分三块：结论（直说吉凶，人话）→现状（世应六神说当下）→推演（七层逐步展开，引具体爻位六亲六神，含应期判断）。避免绝对断语，多用可能/倾向。用**加粗**标重点。' },
       { role: 'user', content: prompt },
     ],
     stream: true,
