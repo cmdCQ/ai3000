@@ -1116,7 +1116,7 @@ async function startAIStream() {
     xhr.onreadystatechange = function() {
       if (xhr.readyState >= 2 && !ragSourcesLine) {
         var src = xhr.getResponseHeader('X-Rag-Sources');
-        if (src) ragSourcesLine = '📚 **参考古籍**：' + src.split('|').map(function(s){ return '《'+s+'》'; }).join('、');
+        if (src) ragSourcesLine = '📚 **参考古籍**：' + decodeURIComponent(src).split('|').map(function(s){ return '《'+s+'》'; }).join('、');
       }
     };
 

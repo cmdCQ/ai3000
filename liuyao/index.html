@@ -717,11 +717,11 @@ function coinDivination() {
     var info = TYPE_MAP[t];
     return { num:info.num, yang:!!info.yang, changing:!!info.changing, type:t, pos:i+1 };
   });
-  // 下卦：初(0)二(1)三(2)爻
-  var lowerYangs = [lines[2].yang?1:0, lines[1].yang?1:0, lines[0].yang?1:0];
+  // 下卦：初爻(0)=bottom, 二爻(1)=mid, 三爻(2)=top
+  var lowerYangs = [lines[0].yang?1:0, lines[1].yang?1:0, lines[2].yang?1:0];
   var lowerNum = linesToTri(lowerYangs);
-  // 上卦：四(3)五(4)上(5)爻
-  var upperYangs = [lines[5].yang?1:0, lines[4].yang?1:0, lines[3].yang?1:0];
+  // 上卦：四爻(3)=bottom, 五爻(4)=mid, 上爻(5)=top
+  var upperYangs = [lines[3].yang?1:0, lines[4].yang?1:0, lines[5].yang?1:0];
   var upperNum = linesToTri(upperYangs);
   // 动爻
   var movePos = [];
@@ -738,17 +738,17 @@ function coinDivination() {
 function manualDivination() {
   var lines = [];
   for (var i = 0; i < 6; i++) {
-    var sel = document.getElementById('manualLine'+i);
-    var val = sel ? parseInt(sel.value) : 7;
-    // 7=少阳 8=少阴 9=老阳 6=老阴
-    var yang = (val === 7 || val === 9);
-    var changing = (val === 6 || val === 9);
-    var type = val === 7 ? 'shaoyang' : val === 8 ? 'shaoyin' : val === 9 ? 'laoyang' : 'laoyin';
+    var type = MANUAL_LINES[i] || 'shaoyin';
+    var yang = (type === 'shaoyang' || type === 'laoyang');
+    var changing = (type === 'laoyin' || type === 'laoyang');
+    var val = type === 'shaoyang' ? 7 : type === 'shaoyin' ? 8 : type === 'laoyang' ? 9 : 6;
     lines.push({ num:val, yang:yang, changing:changing, type:type });
   }
-  var lowerYangs = [lines[2].yang?1:0, lines[1].yang?1:0, lines[0].yang?1:0];
+  // 下卦：初爻(0)=bottom, 二爻(1)=mid, 三爻(2)=top
+  var lowerYangs = [lines[0].yang?1:0, lines[1].yang?1:0, lines[2].yang?1:0];
   var lowerNum = linesToTri(lowerYangs);
-  var upperYangs = [lines[5].yang?1:0, lines[4].yang?1:0, lines[3].yang?1:0];
+  // 上卦：四爻(3)=bottom, 五爻(4)=mid, 上爻(5)=top
+  var upperYangs = [lines[3].yang?1:0, lines[4].yang?1:0, lines[5].yang?1:0];
   var upperNum = linesToTri(upperYangs);
   var movePos = [];
   for (var i = 0; i < 6; i++) {
@@ -771,9 +771,11 @@ function autoDivination() {
     var info = TYPE_MAP[t];
     return { num:info.num, yang:!!info.yang, changing:!!info.changing, type:t, pos:i+1 };
   });
-  var lowerYangs = [lines[2].yang?1:0, lines[1].yang?1:0, lines[0].yang?1:0];
+  // 下卦：初爻(0)=bottom, 二爻(1)=mid, 三爻(2)=top
+  var lowerYangs = [lines[0].yang?1:0, lines[1].yang?1:0, lines[2].yang?1:0];
   var lowerNum = linesToTri(lowerYangs);
-  var upperYangs = [lines[5].yang?1:0, lines[4].yang?1:0, lines[3].yang?1:0];
+  // 上卦：四爻(3)=bottom, 五爻(4)=mid, 上爻(5)=top
+  var upperYangs = [lines[3].yang?1:0, lines[4].yang?1:0, lines[5].yang?1:0];
   var upperNum = linesToTri(upperYangs);
   var movePos = [];
   for (var i = 0; i < 6; i++) {
@@ -839,6 +841,11 @@ function renderMethodParams() {
       setTimeout(initCoinToss, 50);
       break;
     case 'manual':
+      // 清理铜钱残留状态
+      if (COIN.spinTimer) { clearInterval(COIN.spinTimer); COIN.spinTimer = null; }
+      COIN.state = 'idle';
+      COIN.round = 0;
+      COIN.results = [];
       h = '<div style="margin-top:0.6rem">'+
           '<div class="algo-text">从下往上手动指定每一爻的阴阳状态</div>'+
           '<div id="manualLines"></div>'+
@@ -852,28 +859,54 @@ function renderMethodParams() {
   container.innerHTML = h;
 }
 
-function fillManualLineSelects() {
+var MANUAL_LINES = ['shaoyin','shaoyin','shaoyin','shaoyin','shaoyin','shaoyin']; // [初爻,二爻,三爻,四爻,五爻,上爻]
+
+function cycleManualLine(posIdx) {
+  // posIdx: 0=初爻 ... 5=上爻
+  var order = ['shaoyang','laoyang','shaoyin','laoyin'];
+  var cur = MANUAL_LINES[posIdx];
+  var nextIdx = (order.indexOf(cur) + 1) % order.length;
+  MANUAL_LINES[posIdx] = order[nextIdx];
+  renderManualLines();
+}
+
+function renderManualLines() {
   var el = document.getElementById('manualLines');
   if (!el) return;
   var posNames = ['初爻','二爻','三爻','四爻','五爻','上爻'];
-  var options = [
-    {val:7, label:'少阳 ━━━━━ (7)'},
-    {val:8, label:'少阴 ━ ━ ━ (8)'},
-    {val:9, label:'老阳 ━━━━━ ○ (9)'},
-    {val:6, label:'老阴 ━ ━ ━ × (6)'}
-  ];
+  var typeInfo = {
+    laoyin: {label:'老阴', bar:'yin', mark:'×'},
+    shaoyang: {label:'少阳', bar:'yang', mark:''},
+    shaoyin: {label:'少阴', bar:'yin', mark:''},
+    laoyang: {label:'老阳', bar:'yang', mark:'○'}
+  };
   var h = '';
+  // 显示顺序：上爻(top) → 初爻(bottom)
   for (var i = 5; i >= 0; i--) {
-    h += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem">' +
-      '<span style="font-size:0.75rem;color:var(--text-dim);min-width:2.5rem">'+posNames[i]+'</span>' +
-      '<select id="manualLine'+i+'" style="flex:1;padding:0.4rem 0.5rem;font-size:0.8rem;font-family:monospace;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);outline:none">' +
-      '<option value="7">少阳 ━━━━━ (7)</option>' +
-      '<option value="8" selected>少阴 ━ ━ ━ (8)</option>' +
-      '<option value="9">老阳 ━━━━━ ○ (9)</option>' +
-      '<option value="6">老阴 ━ ━ ━ × (6)</option>' +
-      '</select></div>';
+    var type = MANUAL_LINES[i];
+    var info = typeInfo[type];
+    var barHtml = '';
+    if (info.bar === 'yang') {
+      barHtml = '<div class="bar-yang"></div>';
+    } else {
+      barHtml = '<div class="bar-yin"><span></span><span></span></div>';
+    }
+    if (info.mark) {
+      barHtml += '<span class="bar-mark">'+info.mark+'</span>';
+    }
+    h += '<div class="coin-line-row" style="cursor:pointer" onclick="cycleManualLine('+i+')">'+
+      '<span class="cl-pos">'+posNames[i]+'</span>'+
+      '<div class="cl-bar"><div class="cl-bar-inner">'+barHtml+'</div></div>'+
+      '<span class="cl-type">'+info.label+'</span></div>';
   }
+  h += '<div class="algo-text" style="margin-top:0.4rem;font-size:0.7rem">点击每行可切换：少阳 → 老阳 → 少阴 → 老阴</div>';
   el.innerHTML = h;
+}
+
+function fillManualLineSelects() {
+  // 兼容旧调用，重置手动行并渲染
+  MANUAL_LINES = ['shaoyin','shaoyin','shaoyin','shaoyin','shaoyin','shaoyin'];
+  renderManualLines();
 }
 
 // ===== 开始排盘 =====
@@ -894,11 +927,18 @@ async function startDivination(e) {
 
   // ===== 2. 计算卦象 =====
   var result;
-  switch(currentMethod) {
-    case 'coin': result = coinDivination(); break;
-    case 'manual': result = manualDivination(); break;
-    case 'auto': result = autoDivination(); break;
-    default: resetBtn(); btn.textContent='开始排盘'; return;
+  try {
+    switch(currentMethod) {
+      case 'coin': result = coinDivination(); break;
+      case 'manual': result = manualDivination(); break;
+      case 'auto': result = autoDivination(); break;
+      default: resetBtn(); btn.textContent='开始排盘'; return;
+    }
+  } catch(err) {
+    console.error('排盘计算失败:', err);
+    alert('排盘出错：' + (err.message || '未知错误') + '，请刷新后重试');
+    resetBtn();
+    return;
   }
 
   // ===== 3. 统一：topic / gender / 起卦时间 / 农历 / 跳转 =====

@@ -1012,14 +1012,22 @@ async function handle(req, res) {
       const ragRes = await fetch('http://localhost:8800/api/retrieve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, top_k: 3, categories: ['meihua', 'yijing'], similarity_threshold: 0.3 }),
+        body: JSON.stringify({ query: searchQuery, top_k: 15, categories: ['meihua', 'yijing'], similarity_threshold: 0.3 }),
       });
       const ragData = await ragRes.json();
       if (ragData.results && ragData.results.length > 0) {
-        ragContext = ragData.results.map((r, i) => `【古籍 ${i + 1}】《${r.book_name}》${r.chapter ? ' - ' + r.chapter : ''}\n${r.text}`).join('\n\n');
-        // 去重来源书籍
-        const seen = new Set();
-        ragSources = ragData.results.filter(r => { const k = r.book_name; return seen.has(k) ? false : seen.add(k); }).map(r => r.book_name);
+        // 去重书籍名，取不同书的前3本
+        const seenBooks = new Set();
+        const diverseResults = [];
+        for (const r of ragData.results) {
+          if (!seenBooks.has(r.book_name)) {
+            seenBooks.add(r.book_name);
+            diverseResults.push(r);
+          }
+        }
+        const top3 = diverseResults.slice(0, 3);
+        ragContext = top3.map((r, i) => `【古籍 ${i + 1}】《${r.book_name}》${r.chapter ? ' - ' + r.chapter : ''}\n${r.text}`).join('\n\n');
+        ragSources = top3.map(r => r.book_name);
       }
     } catch (e) { console.error('RAG retrieve error:', e.message); }
 
@@ -1032,7 +1040,7 @@ async function handle(req, res) {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
-      'X-Rag-Sources': ragSources.length > 0 ? ragSources.join('|') : '',
+      'X-Rag-Sources': ragSources.length > 0 ? encodeURIComponent(ragSources.join('|')) : '',
     });
 
     try {
@@ -1149,7 +1157,7 @@ ${r.text}`).join('\n\n');
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
-      'X-Rag-Sources': ragSources.length > 0 ? ragSources.join('|') : '',
+      'X-Rag-Sources': ragSources.length > 0 ? encodeURIComponent(ragSources.join('|')) : '',
     });
 
     try {
