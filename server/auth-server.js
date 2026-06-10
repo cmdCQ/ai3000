@@ -1032,12 +1032,10 @@ async function handle(req, res) {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
+      'X-Rag-Sources': ragSources.length > 0 ? ragSources.join('|') : '',
     });
 
     try {
-      // 参考古籍通过 header 传给前端
-      const ragHeader = ragSources.length > 0 ? ragSources.join("|") : "";
-      res.setHeader("X-Rag-Sources", ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
       const outputText = await streamDeepSeek(prompt, res, username ? 0 : 1200);
@@ -1151,12 +1149,10 @@ ${r.text}`).join('\n\n');
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
+      'X-Rag-Sources': ragSources.length > 0 ? ragSources.join('|') : '',
     });
 
     try {
-      // 参考古籍通过 header 传给前端，不在流前输出（避免用户误以为卡住）
-      const ragHeader = ragSources.length > 0 ? ragSources.join('|') : '';
-      res.setHeader('X-Rag-Sources', ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
       const outputText = await streamDeepSeekLiuyao(prompt, res, username ? 0 : 1200);
