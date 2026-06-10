@@ -1962,6 +1962,7 @@ async function streamDeepSeek(prompt, res, maxOutputChars) {
   var custom = readPrompts();
   var systemPrompt = custom.mhys_system || '你是梅花易数解卦师。回答清晰、理性、有启发性，避免绝对化断语，多用"可能""倾向"。可主动反问补充背景。';
 
+  var controller = new AbortController();
   const stream = await client.chat.completions.create({
     model: 'deepseek-v4-flash',
     messages: [
@@ -1971,27 +1972,28 @@ async function streamDeepSeek(prompt, res, maxOutputChars) {
     stream: true,
     max_tokens: maxOutputChars ? Math.ceil(maxOutputChars / 0.6) : 3000,
     temperature: 0.7,
-  });
+  }, { signal: controller.signal });
 
   let fullText = '';
   let stopped = false;
-  for await (const chunk of stream) {
-    if (stopped) continue;
-    const content = chunk.choices[0]?.delta?.content || '';
-    if (content) {
-      fullText += content;
-      // 未登录用户达到字数上限后截断
-      if (maxOutputChars && fullText.length >= maxOutputChars) {
-        stopped = true;
-        var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户的解析有字数限制。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
-        fullText += loginPrompt;
-        try { res.write(loginPrompt); } catch(e) {}
-        try { stream.controller.abort(); } catch(e) {}
-      } else {
-        try { res.write(content); } catch(e) {}
+  try {
+    for await (const chunk of stream) {
+      if (stopped) continue;
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        fullText += content;
+        if (maxOutputChars && fullText.length >= maxOutputChars) {
+          stopped = true;
+          var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户仅限预览，完整解析需登录。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
+          fullText += loginPrompt;
+          try { res.write(loginPrompt); } catch(e) {}
+          controller.abort();
+        } else {
+          try { res.write(content); } catch(e) {}
+        }
       }
     }
-  }
+  } catch(e) { /* AbortError expected */ }
   return fullText;
 }
 
@@ -2143,6 +2145,7 @@ async function streamDeepSeekLiuyao(prompt, res, maxOutputChars) {
   var custom = readPrompts();
   var systemPrompt = custom.liuyao_system || '你是六爻纳甲解卦师。断卦必须严格遵循七层标准流程：①定用神→②看世应→③察日月→④辨动爻→⑤析生克→⑥审空亡月破→⑦推应期。输出分三块：结论（直说吉凶，人话）→现状（世应六神说当下）→推演（七层逐步展开，引具体爻位六亲六神，含应期判断）。避免绝对断语，多用可能/倾向。用**加粗**标重点。';
 
+  var controller = new AbortController();
   const stream = await client.chat.completions.create({
     model: 'deepseek-v4-flash',
     messages: [
@@ -2151,26 +2154,28 @@ async function streamDeepSeekLiuyao(prompt, res, maxOutputChars) {
     ],
     stream: true,
     max_tokens: maxOutputChars ? Math.ceil(maxOutputChars / 0.6) : 3000,
-  });
+  }, { signal: controller.signal });
 
   let fullText = '';
   let stopped = false;
-  for await (const chunk of stream) {
-    if (stopped) continue;
-    const content = chunk.choices[0]?.delta?.content || '';
-    if (content) {
-      fullText += content;
-      if (maxOutputChars && fullText.length >= maxOutputChars) {
-        stopped = true;
-        var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户仅限预览，完整解析需登录。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
-        fullText += loginPrompt;
-        try { res.write(loginPrompt); } catch(e) {}
-        try { stream.controller.abort(); } catch(e) {}
-      } else {
-        try { res.write(content); } catch(e) {}
+  try {
+    for await (const chunk of stream) {
+      if (stopped) continue;
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        fullText += content;
+        if (maxOutputChars && fullText.length >= maxOutputChars) {
+          stopped = true;
+          var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户仅限预览，完整解析需登录。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
+          fullText += loginPrompt;
+          try { res.write(loginPrompt); } catch(e) {}
+          controller.abort();
+        } else {
+          try { res.write(content); } catch(e) {}
+        }
       }
     }
-  }
+  } catch(e) { /* AbortError expected */ }
   return fullText;
 }
 
