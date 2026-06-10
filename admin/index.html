@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>后台管理 · AI三千问</title>
-<link rel="stylesheet" href="/css/admin.css?v=1749475100">
+<link rel="stylesheet" href="/css/admin.css?v=1749558800">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -84,6 +84,10 @@
         <a href="#" class="adm-nav-item" data-tab="books">
           <span class="adm-nav-icon">📖</span>
           <span>参考书籍</span>
+        </a>
+        <a href="#" class="adm-nav-item" data-tab="prompts">
+          <span class="adm-nav-icon">⚙</span>
+          <span>Prompt</span>
         </a>
       </nav>
 
@@ -357,6 +361,17 @@
           </div>
         </section>
 
+        <!-- ===== Prompt 管理 ===== -->
+        <section class="adm-tab" id="tab-prompts">
+          <div class="adm-sec-head">
+            <h2 class="adm-sec-title">Prompt 管理</h2>
+            <span class="adm-sec-meta" id="promptsMeta">修改梅花易数和六爻的 AI 提示词模板</span>
+          </div>
+          <div class="adm-prompts-list" id="promptsList">
+            <div class="adm-card-empty">加载中…</div>
+          </div>
+        </section>
+
         <!-- ===== 系统设置 ===== -->
         <section class="adm-tab" id="tab-settings">
           <h2 class="adm-sec-title">系统设置</h2>
@@ -444,6 +459,6 @@
 
 </div>
 
-<script src="/js/admin.js?v=17"></script>
+<script src="/js/admin.js?v=18"></script>
 </body>
 </html>

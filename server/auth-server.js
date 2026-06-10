@@ -1346,6 +1346,57 @@ ${r.text}`).join('\n\n');
 
   // GET /api/admin/mhys-flat — 管理员查看所有排盘记录（扁平列表，供卡片跳转）
 
+  // ══════ Prompt 管理 API ══════
+
+  // GET /api/admin/prompts — 获取所有 prompt 模板（含默认值）
+  if (req.method === 'GET' && pathname === '/api/admin/prompts') {
+    const payload = parseToken(req);
+    if (!payload || payload.role !== 'admin') return json(res, { error: '未授权' }, 401);
+    var custom = readPrompts();
+    var defaults = {
+      mhys_system: '你是梅花易数解卦师。回答清晰、理性、有启发性，避免绝对化断语，多用"可能""倾向"。可主动反问补充背景。',
+      mhys_prompt: '以下是一组梅花易数排盘数据。\n\n【求测事项】{{topic}}\n\n【卦象】\n本卦：{{benGuaUpper}}上{{benGuaLower}}下 → {{benGuaName}}\n互卦：{{huGuaUpper}}上{{huGuaLower}}下 → {{huGuaName}}\n变卦：{{bianGuaUpper}}上{{bianGuaLower}}下 → {{bianGuaName}}\n错卦：{{cuoGuaUpper}}上{{cuoGuaLower}}下 → {{cuoGuaName}}\n综卦：{{zongGuaUpper}}上{{zongGuaLower}}下 → {{zongGuaName}}\n\n【体用】体卦：{{tiName}}（{{tiElement}}）｜用卦：{{yongName}}（{{yongElement}}）\n生克：{{tiyongVerdict}} — {{tiyongDesc}}\n动爻：{{movingYao}}\n\n请按三段回复，每段以"---"分隔：\n\n【一、回答】大白话直接说结论（吉/凶/平/转机），结合变卦判断走向。不含卦象推导术语。\n\n【二、现状】用本卦说当前状况，用互卦点隐藏变数。也说大白话，不出现卦象推导。\n\n【三、解卦思路】推演：本卦定大局→互卦析过程→变卦断结局，错综对照。说明体用生克影响。可含卦象术语。末尾提醒卦象非绝对。\n\n避免绝对化断语（"必死""大吉"等），多用"可能""倾向"。语气干脆老练。用**加粗**标结论重点（会显示金色），###子标题适度。\n\n{{ragContext}}\n\n【四、补充】末尾引导用户补充背景："如有更多具体情况可补充，方便做更细致解读"——语气自然，单独一段。',
+      mhys_notopic: '你是一位梅花易数解卦师。用户还没说问什么事，请用一句话简短询问。',
+      mhys_followup: '针对「{{topic}}」的追问：\n\n【之前解读】{{context}}\n\n【追问】{{followUp}}\n\n请直接回答追问，不重复完整分析。结构：\n【一、回答】——结论和建议，不用卦象术语。\n【二、思路】（可选）——一两句推演依据。',
+      liuyao_system: '你是六爻纳甲解卦师。断卦必须严格遵循七层标准流程：①定用神（据事项性别取六亲）→②看世应（世为己应为人，分人我吉凶）→③察日月（日主月提定旺衰，爻不敌日月）→④辨动爻（动为变化之机，独发力量最大）→⑤析生克（元神生用则吉，忌神克用则凶，贪生贪合可忘克）→⑥审空亡月破（辨真空假空，空忌吉空用凶）→⑦推应期（出空填实、冲墓冲合、生旺墓绝）。输出分三块：结论（直说吉凶，人话）→现状（世应六神说当下）→推演（七层逐步展开，引具体爻位六亲六神，含应期判断）。避免绝对断语，多用可能/倾向。用**加粗**标重点。',
+      liuyao_prompt: '以下是一组六爻排盘数据。请严格按照六爻断卦标准流程逐层分析。\n\n【求测事项】{{topic}}\n【求测者性别】{{gender}}\n\n【卦象】\n本卦：{{benGuaUpper}}上{{benGuaLower}}下 → {{benGuaName}}\n变卦：{{bianGuaUpper}}上{{bianGuaLower}}下 → {{bianGuaName}}\n\n══════ 断卦方法论（必须逐层执行） ══════\n\n【第一层·定用神】根据求测事项和性别确定用神……（可复制现有完整模板，变量用 {{变量名}} 替换）\n\n请严格按以下结构回复，每段以"---"分隔：\n\n【一、结论】直接说吉凶结论，1-2句话。结合用神旺衰与忌神动否。大白话。\n\n【二、现状分析】描述当前状况：世应关系、六神氛围、爻位事态阶段。不出现推导。\n\n【三、解卦推演】按七层方法论逐步推演，引用具体爻位六亲六神，含应期判断。可含术语。\n\n用**加粗**标重点。避免绝对化断语。\n\n{{ragContext}}\n\n【补充引导】末尾引导用户补充背景。',
+      liuyao_notopic: '你是一位六爻纳甲解卦师。用户还没说问什么事，请先回应排盘数据（本卦变卦名+世应位置），然后用一句话询问求测事项。',
+      liuyao_followup: '针对「{{topic}}」的追问：\n\n【之前解读】{{context}}\n\n【追问】{{followUp}}\n\n直接回答追问，不重复完整七层分析。聚焦追问涉及的层面。结构：\n【回答】——结论和建议，不用卦象术语。\n【依据】——简短推演依据（1-3句，引用原卦爻位）。',
+    };
+    var keys = Object.keys(defaults);
+    var list = keys.map(function(k) {
+      return {
+        key: k,
+        defaultValue: defaults[k],
+        customValue: custom[k] || null,
+        isCustom: !!custom[k],
+      };
+    });
+    return json(res, list);
+  }
+
+  // POST /api/admin/prompts/:key — 保存/更新自定义 prompt
+  if (req.method === 'POST' && pathname.startsWith('/api/admin/prompts/') && pathname.split('/').length === 5) {
+    const payload = parseToken(req);
+    if (!payload || payload.role !== 'admin') return json(res, { error: '未授权' }, 401);
+    const key = pathname.split('/').pop();
+    var custom = readPrompts();
+    custom[key] = body.value || '';
+    writePrompts(custom);
+    return json(res, { ok: true, key: key });
+  }
+
+  // DELETE /api/admin/prompts/:key — 重置为默认
+  if (req.method === 'DELETE' && pathname.startsWith('/api/admin/prompts/') && pathname.split('/').length === 5) {
+    const payload = parseToken(req);
+    if (!payload || payload.role !== 'admin') return json(res, { error: '未授权' }, 401);
+    const key = pathname.split('/').pop();
+    var custom = readPrompts();
+    delete custom[key];
+    writePrompts(custom);
+    return json(res, { ok: true, key: key });
+  }
+
   // ===== 建议（Suggestions）API =====
 
   // POST /api/suggestions — 提交建议（需登录）
@@ -1725,10 +1776,21 @@ async function parseBody(req) {
 // ===== 梅花易数 AI 解析（流式） =====
 
 function buildMhysPrompt(topic, hexagrams, ragContext) {
+  var custom = readPrompts();
+
   if (!topic) {
+    var noTopicTpl = custom.mhys_notopic;
+    if (noTopicTpl) return renderPrompt(noTopicTpl, mhysTemplateVars('', hexagrams));
     return '你是一位梅花易数解卦师。用户还没说问什么事，请用一句话简短询问。';
   }
 
+  var vars = mhysTemplateVars(topic, hexagrams);
+  vars.ragContext = ragContext || '';
+
+  var tpl = custom.mhys_prompt;
+  if (tpl) return renderPrompt(tpl, vars);
+
+  // ↓↓↓ 默认模板 ↓↓↓
   const bg = hexagrams.benGua, hg = hexagrams.huGua, bng = hexagrams.bianGua;
   const cg = hexagrams.cuoGua, zg = hexagrams.zongGua;
   const ti = hexagrams.ti, yong = hexagrams.yong;
@@ -1811,7 +1873,74 @@ function estimateTokens(text) {
   return Math.ceil(chinese * 0.6 + english * 0.25) + 10;
 }
 
+// ══════ Prompt 模板引擎 ══════
+const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
+
+function readPrompts() {
+  try { return JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf-8')); }
+  catch { return {}; }
+}
+function writePrompts(data) {
+  fs.writeFileSync(PROMPTS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+// 模板变量替换
+function renderPrompt(template, vars) {
+  if (!template) return null;
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), String(val ?? ''));
+  }
+  return result;
+}
+
+// 梅花易数模板变量提取
+function mhysTemplateVars(topic, hexagrams) {
+  const bg = hexagrams.benGua || {}, hg = hexagrams.huGua || {}, bng = hexagrams.bianGua || {};
+  const cg = hexagrams.cuoGua || {}, zg = hexagrams.zongGua || {};
+  const ti = hexagrams.ti || {}, yong = hexagrams.yong || {};
+  const v = hexagrams.verdict || {};
+  const movingYao = bg.movingYao && bg.movingYao.length ? '第' + bg.movingYao.join('、') + '爻动' : '无动爻';
+  return {
+    topic: topic || '',
+    benGuaName: bg.name || '', benGuaUpper: (bg.upperTri || {}).name || '', benGuaLower: (bg.lowerTri || {}).name || '',
+    huGuaName: hg.name || '', huGuaUpper: (hg.upperTri || {}).name || '', huGuaLower: (hg.lowerTri || {}).name || '',
+    bianGuaName: bng.name || '', bianGuaUpper: (bng.upperTri || {}).name || '', bianGuaLower: (bng.lowerTri || {}).name || '',
+    cuoGuaName: cg.name || '', cuoGuaUpper: (cg.upperTri || {}).name || '', cuoGuaLower: (cg.lowerTri || {}).name || '',
+    zongGuaName: zg.name || '', zongGuaUpper: (zg.upperTri || {}).name || '', zongGuaLower: (zg.lowerTri || {}).name || '',
+    tiName: (ti.tri || {}).name || '', tiElement: (ti.tri || {}).element || '',
+    yongName: (yong.tri || {}).name || '', yongElement: (yong.tri || {}).element || '',
+    tiyongVerdict: v.text || '', tiyongDesc: v.desc || '',
+    movingYao: movingYao,
+    ragContext: '',
+  };
+}
+
+// 六爻模板变量提取
+function liuyaoTemplateVars(topic, hexagrams) {
+  const bg = hexagrams.benGua || {}, bng = hexagrams.bianGua || {};
+  var gender = hexagrams.gender;
+  var genderLabel = '未知';
+  if (gender === 'male') genderLabel = '男';
+  else if (gender === 'female') genderLabel = '女';
+  return {
+    topic: topic || '',
+    gender: genderLabel,
+    benGuaName: bg.name || '', benGuaUpper: (bg.upperTri || {}).name || '', benGuaLower: (bg.lowerTri || {}).name || '',
+    bianGuaName: bng.name || '', bianGuaUpper: (bng.upperTri || {}).name || '', bianGuaLower: (bng.lowerTri || {}).name || '',
+    ragContext: '',
+  };
+}
+
 function buildFollowUpPrompt(topic, followUp, context, hexagrams) {
+  var custom = readPrompts();
+  var tpl = custom.mhys_followup;
+  if (tpl) {
+    var vars = mhysTemplateVars(topic, hexagrams);
+    vars.followUp = followUp || '';
+    vars.context = (context || '').slice(-1200);
+    return renderPrompt(tpl, vars);
+  }
   let p = `针对「${topic}」的追问：
 
 【之前解读】${(context || '').slice(-1000)}
@@ -1831,10 +1960,13 @@ async function streamDeepSeek(prompt, res) {
     baseURL: config.deepseek.baseURL,
   });
 
+  var custom = readPrompts();
+  var systemPrompt = custom.mhys_system || '你是梅花易数解卦师。回答清晰、理性、有启发性，避免绝对化断语，多用"可能""倾向"。可主动反问补充背景。';
+
   const stream = await client.chat.completions.create({
     model: 'deepseek-v4-flash',
     messages: [
-      { role: 'system', content: '你是梅花易数解卦师。回答清晰、理性、有启发性，避免绝对化断语，多用"可能""倾向"。可主动反问补充背景。' },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt },
     ],
     stream: true,
@@ -1854,10 +1986,21 @@ async function streamDeepSeek(prompt, res) {
 }
 
 function buildLiuyaoPrompt(topic, hexagrams, ragContext) {
+  var custom = readPrompts();
+
   if (!topic) {
+    var noTopicTpl = custom.liuyao_notopic;
+    if (noTopicTpl) return renderPrompt(noTopicTpl, liuyaoTemplateVars('', hexagrams));
     return '你是一位六爻纳甲解卦师。用户还没说问什么事，请先回应排盘数据（本卦变卦名+世应位置），然后用一句话询问求测事项。';
   }
 
+  var vars = liuyaoTemplateVars(topic, hexagrams);
+  vars.ragContext = ragContext || '';
+
+  var tpl = custom.liuyao_prompt;
+  if (tpl) return renderPrompt(tpl, vars);
+
+  // ↓↓↓ 默认模板 ↓↓↓
   const bg = hexagrams.benGua || {};
   const bng = hexagrams.bianGua || {};
   var gender = hexagrams.gender;
@@ -1965,6 +2108,14 @@ function buildLiuyaoPrompt(topic, hexagrams, ragContext) {
 }
 
 function buildLiuyaoFollowUpPrompt(topic, followUp, context, hexagrams) {
+  var custom = readPrompts();
+  var tpl = custom.liuyao_followup;
+  if (tpl) {
+    var vars = liuyaoTemplateVars(topic, hexagrams);
+    vars.followUp = followUp || '';
+    vars.context = (context || '').slice(-1200);
+    return renderPrompt(tpl, vars);
+  }
   var p = '针对「' + topic + '」的追问：\n\n';
   p += '【之前解读】' + ((context || '').slice(-1200)) + '\n\n';
   p += '【追问】' + followUp + '\n\n';
@@ -1979,10 +2130,13 @@ async function streamDeepSeekLiuyao(prompt, res) {
     baseURL: config.deepseek.baseURL,
   });
 
+  var custom = readPrompts();
+  var systemPrompt = custom.liuyao_system || '你是六爻纳甲解卦师。断卦必须严格遵循七层标准流程：①定用神→②看世应→③察日月→④辨动爻→⑤析生克→⑥审空亡月破→⑦推应期。输出分三块：结论（直说吉凶，人话）→现状（世应六神说当下）→推演（七层逐步展开，引具体爻位六亲六神，含应期判断）。避免绝对断语，多用可能/倾向。用**加粗**标重点。';
+
   const stream = await client.chat.completions.create({
     model: 'deepseek-v4-flash',
     messages: [
-      { role: 'system', content: '你是六爻纳甲解卦师。断卦必须严格遵循七层标准流程：①定用神（据事项性别取六亲）→②看世应（世为己应为人，分人我吉凶）→③察日月（日主月提定旺衰，爻不敌日月）→④辨动爻（动为变化之机，独发力量最大）→⑤析生克（元神生用则吉，忌神克用则凶，贪生贪合可忘克）→⑥审空亡月破（辨真空假空，空忌吉空用凶）→⑦推应期（出空填实、冲墓冲合、生旺墓绝）。输出分三块：结论（直说吉凶，人话）→现状（世应六神说当下）→推演（七层逐步展开，引具体爻位六亲六神，含应期判断）。避免绝对断语，多用可能/倾向。用**加粗**标重点。' },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt },
     ],
     stream: true,

@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tab === 'divination') loadDivUsers();
       else if (tab === 'suggestions') loadSugUsers();
       else if (tab === 'books') loadBooks();
+      else if (tab === 'prompts') loadPrompts();
       else if (tab === 'dashboard') loadDashboard();
     });
   });
@@ -1035,3 +1036,98 @@ doConfirmDelete = async function() {
   }
   return _originalDoConfirmDelete();
 };
+
+// ========================= Prompt 管理 =========================
+
+var promptLabelMap = {
+  mhys_system:   '梅花易数 · System Prompt',
+  mhys_prompt:   '梅花易数 · 用户 Prompt（有事项）',
+  mhys_notopic:  '梅花易数 · 无事项回复',
+  mhys_followup: '梅花易数 · 追问回复',
+  liuyao_system: '六爻 · System Prompt',
+  liuyao_prompt: '六爻 · 用户 Prompt（有事项）',
+  liuyao_notopic:'六爻 · 无事项回复',
+  liuyao_followup:'六爻 · 追问回复',
+};
+
+var promptVarHints = {
+  mhys: '可用变量：{{topic}} {{benGuaName}} {{benGuaUpper}} {{benGuaLower}} {{huGuaName}} {{huGuaUpper}} {{huGuaLower}} {{bianGuaName}} {{bianGuaUpper}} {{bianGuaLower}} {{cuoGuaName}} {{cuoGuaUpper}} {{cuoGuaLower}} {{zongGuaName}} {{zongGuaUpper}} {{zongGuaLower}} {{tiName}} {{tiElement}} {{yongName}} {{yongElement}} {{tiyongVerdict}} {{tiyongDesc}} {{movingYao}} {{ragContext}} {{followUp}} {{context}}',
+  liuyao: '可用变量：{{topic}} {{gender}} {{benGuaName}} {{benGuaUpper}} {{benGuaLower}} {{bianGuaName}} {{bianGuaUpper}} {{bianGuaLower}} {{ragContext}} {{followUp}} {{context}}',
+};
+
+async function loadPrompts() {
+  var list = document.getElementById('promptsList');
+  list.innerHTML = '<div class="adm-card-empty">加载中…</div>';
+
+  try {
+    var res = await adminFetch('/prompts');
+    var prompts = await res.json();
+
+    // 按标签分组
+    var groups = [{ label: '🌸 梅花易数', keys: ['mhys_system','mhys_prompt','mhys_notopic','mhys_followup'] },
+                  { label: '⚡ 六爻', keys: ['liuyao_system','liuyao_prompt','liuyao_notopic','liuyao_followup'] }];
+
+    var html = '';
+    groups.forEach(function(g) {
+      html += '<div class="adm-prompt-group"><h3 class="adm-prompt-group-title">' + g.label + '</h3>';
+      g.keys.forEach(function(key) {
+        var item = prompts.find(function(p) { return p.key === key; });
+        if (!item) return;
+        var label = promptLabelMap[key] || key;
+        var isCustom = item.isCustom;
+        var value = item.customValue || item.defaultValue;
+        var type = key.startsWith('mhys') ? 'mhys' : 'liuyao';
+        var hint = promptVarHints[type] || '';
+        var statusClass = isCustom ? 'adm-prompt-custom' : 'adm-prompt-default';
+        var statusText = isCustom ? '已自定义' : '默认';
+        var escValue = value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        html += '<div class="adm-prompt-item ' + statusClass + '" id="promptItem_' + key + '">' +
+          '<div class="adm-prompt-head">' +
+            '<span class="adm-prompt-label">' + esc(label) + '</span>' +
+            '<span class="adm-prompt-status">' + statusText + '</span>' +
+          '</div>' +
+          '<textarea class="adm-prompt-textarea" id="promptText_' + key + '" rows="' + (key.endsWith('_prompt') ? '14' : '4') + '">' + escValue + '</textarea>' +
+          '<div class="adm-prompt-hint">' + esc(hint) + '</div>' +
+          '<div class="adm-prompt-actions">' +
+            '<button class="adm-btn-primary adm-btn-sm" onclick="savePrompt(\'' + key + '\')">💾 保存</button>' +
+            (isCustom ? '<button class="adm-btn-sm" onclick="resetPrompt(\'' + key + '\')" style="background:#d04040;color:#fff;border:none;border-radius:14px;padding:0.3rem 0.8rem;cursor:pointer;margin-left:0.4rem">↺ 恢复默认</button>' : '') +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    });
+
+    list.innerHTML = html;
+  } catch(e) {
+    console.error('Load prompts failed', e);
+    list.innerHTML = '<div class="adm-card-empty">加载失败，请重试</div>';
+  }
+}
+
+async function savePrompt(key) {
+  var textarea = document.getElementById('promptText_' + key);
+  var value = textarea.value;
+  try {
+    var res = await adminFetch('/prompts/' + key, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: value }),
+    });
+    if (!res.ok) throw new Error('保存失败');
+    // 刷新显示
+    loadPrompts();
+  } catch(e) {
+    alert('保存失败: ' + e.message);
+  }
+}
+
+async function resetPrompt(key) {
+  if (!confirm('确定恢复「' + (promptLabelMap[key] || key) + '」为默认模板吗？')) return;
+  try {
+    var res = await adminFetch('/prompts/' + key, { method: 'DELETE' });
+    if (!res.ok) throw new Error('重置失败');
+    loadPrompts();
+  } catch(e) {
+    alert('重置失败: ' + e.message);
+  }
+}

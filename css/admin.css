@@ -385,6 +385,50 @@ body { overflow-x:hidden; }
   font-size:0.62rem; color:var(--text-muted);
   background:var(--bg); padding:0.1rem 0.45rem; border-radius:8px;
 }
+
+/* Prompt 管理 */
+.adm-prompts-list { display:flex; flex-direction:column; gap:0.5rem; }
+.adm-prompt-group-title {
+  font-family:var(--serif); font-size:0.85rem; color:var(--text);
+  margin:0.8rem 0 0.4rem; padding-bottom:0.3rem;
+  border-bottom:1px solid var(--border);
+  letter-spacing:0.03em;
+}
+.adm-prompt-item {
+  background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:12px; padding:0.8rem 1rem;
+  transition:border-color 0.2s;
+}
+.adm-prompt-item.adm-prompt-custom { border-color:#b8960a; background:rgba(184,150,10,0.03); }
+.adm-prompt-head {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:0.4rem;
+}
+.adm-prompt-label {
+  font-size:0.78rem; font-weight:500; color:var(--text);
+  font-family:var(--sans);
+}
+.adm-prompt-status {
+  font-size:0.6rem; padding:0.15rem 0.55rem; border-radius:8px;
+  font-family:var(--mono);
+}
+.adm-prompt-default .adm-prompt-status { background:var(--bg); color:var(--text-muted); }
+.adm-prompt-custom .adm-prompt-status { background:rgba(184,150,10,0.12); color:#8b6d0a; }
+.adm-prompt-textarea {
+  width:100%; min-height:80px; padding:0.55rem 0.7rem;
+  font-size:0.68rem; font-family:var(--mono); line-height:1.55;
+  background:var(--bg); color:var(--text);
+  border:1px solid var(--border); border-radius:8px;
+  resize:vertical; outline:none;
+  white-space:pre-wrap; word-break:break-all;
+}
+.adm-prompt-textarea:focus { border-color:var(--border-active); }
+.adm-prompt-hint {
+  font-size:0.58rem; color:var(--text-muted);
+  margin-top:0.3rem; font-family:var(--mono);
+  line-height:1.5; word-break:break-all;
+}
+.adm-prompt-actions { margin-top:0.5rem; }
 @media (max-width:700px) {
   .adm-card-grid { grid-template-columns:repeat(2, 1fr); gap:0.4rem; }
   .adm-user-card { padding:0.7rem 0.7rem; }
