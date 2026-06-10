@@ -1040,7 +1040,7 @@ async function handle(req, res) {
       res.setHeader("X-Rag-Sources", ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
-      const outputText = await streamDeepSeek(prompt, res);
+      const outputText = await streamDeepSeek(prompt, res, username ? 0 : 1200);
       // 流完成后计数 token 并更新（即使用户已断开也继续执行）
       if (outputText && username) {
         const outputTokens = estimateTokens(outputText);
@@ -1159,7 +1159,7 @@ ${r.text}`).join('\n\n');
       res.setHeader('X-Rag-Sources', ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
-      const outputText = await streamDeepSeekLiuyao(prompt, res);
+      const outputText = await streamDeepSeekLiuyao(prompt, res, username ? 0 : 1200);
       // 流完成后计数 token 并更新（即使用户已断开也继续执行）
       if (outputText && username) {
         const outputTokens = estimateTokens(outputText);
@@ -1952,7 +1952,7 @@ function buildFollowUpPrompt(topic, followUp, context, hexagrams) {
   return p;
 }
 
-async function streamDeepSeek(prompt, res) {
+async function streamDeepSeek(prompt, res, maxOutputChars) {
   const OpenAI = require('openai');
   const client = new OpenAI({
     apiKey: config.deepseek.apiKey,
@@ -1969,16 +1969,27 @@ async function streamDeepSeek(prompt, res) {
       { role: 'user', content: prompt },
     ],
     stream: true,
-    max_tokens: 3000,
+    max_tokens: maxOutputChars ? Math.ceil(maxOutputChars / 0.6) : 3000,
     temperature: 0.7,
   });
 
   let fullText = '';
+  let stopped = false;
   for await (const chunk of stream) {
+    if (stopped) continue;
     const content = chunk.choices[0]?.delta?.content || '';
     if (content) {
       fullText += content;
-      try { res.write(content); } catch(e) { /* 客户端已断开，继续收集 */ }
+      // 未登录用户达到字数上限后截断
+      if (maxOutputChars && fullText.length >= maxOutputChars) {
+        stopped = true;
+        var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户的解析有字数限制。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
+        fullText += loginPrompt;
+        try { res.write(loginPrompt); } catch(e) {}
+        try { stream.controller.abort(); } catch(e) {}
+      } else {
+        try { res.write(content); } catch(e) {}
+      }
     }
   }
   return fullText;
@@ -2122,7 +2133,7 @@ function buildLiuyaoFollowUpPrompt(topic, followUp, context, hexagrams) {
   return p;
 }
 
-async function streamDeepSeekLiuyao(prompt, res) {
+async function streamDeepSeekLiuyao(prompt, res, maxOutputChars) {
   const OpenAI = require('openai');
   const client = new OpenAI({
     apiKey: config.deepseek.apiKey,
@@ -2139,14 +2150,26 @@ async function streamDeepSeekLiuyao(prompt, res) {
       { role: 'user', content: prompt },
     ],
     stream: true,
-    max_tokens: 3000,
+    max_tokens: maxOutputChars ? Math.ceil(maxOutputChars / 0.6) : 3000,
   });
 
   let fullText = '';
+  let stopped = false;
   for await (const chunk of stream) {
+    if (stopped) continue;
     const content = chunk.choices[0]?.delta?.content || '';
-    fullText += content;
-    try { res.write(content); } catch(e) { /* 客户端已断开，继续收集 */ }
+    if (content) {
+      fullText += content;
+      if (maxOutputChars && fullText.length >= maxOutputChars) {
+        stopped = true;
+        var loginPrompt = '\n\n---\n\n> ⚠️ 未登录用户仅限预览，完整解析需登录。\n> 🔑 [登录](/login/)即可解锁完整AI解析（最少100次/10万token免费额度）';
+        fullText += loginPrompt;
+        try { res.write(loginPrompt); } catch(e) {}
+        try { stream.controller.abort(); } catch(e) {}
+      } else {
+        try { res.write(content); } catch(e) {}
+      }
+    }
   }
   return fullText;
 }
