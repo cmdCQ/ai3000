@@ -984,17 +984,29 @@ async function startAIStream() {
     for (var k in headers) xhr.setRequestHeader(k, headers[k]);
     
     var fullText = '';
+    var ragSourcesLine = '';
+    var firstContent = false;
     var respDiv = document.createElement('div');
     respDiv.className = 'ai-result';
-    respDiv.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div><span>输出中……</span></div>';
+    respDiv.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div><span>正在检索古籍，即将开始解卦…</span></div>';
     resp.innerHTML = '';
     resp.appendChild(respDiv);
+
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState >= 2 && !ragSourcesLine) {
+        var src = xhr.getResponseHeader('X-Rag-Sources');
+        if (src) ragSourcesLine = '📚 **参考古籍**：' + src.split('|').map(function(s){ return '《'+s+'》'; }).join('、');
+      }
+    };
 
     xhr.onprogress = function() {
       var newText = xhr.responseText.substring(fullText.length);
       if (newText) {
+        if (!firstContent) { firstContent = true; }
         fullText = xhr.responseText;
-        respDiv.innerHTML = renderMarkdown(fullText);
+        var displayText = fullText;
+        if (ragSourcesLine) displayText = ragSourcesLine + '\n\n' + fullText;
+        respDiv.innerHTML = renderMarkdown(displayText);
         resp.scrollTop = resp.scrollHeight;
       }
     };

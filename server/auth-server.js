@@ -1035,10 +1035,9 @@ async function handle(req, res) {
     });
 
     try {
-      // 先输出参考古籍来源
-      if (ragSources.length > 0) {
-        res.write('📚 **参考古籍**：' + ragSources.map(s => '《' + s + '》').join('、') + '\n\n');
-      }
+      // 参考古籍通过 header 传给前端
+      const ragHeader = ragSources.length > 0 ? ragSources.join("|") : "";
+      res.setHeader("X-Rag-Sources", ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
       const outputText = await streamDeepSeek(prompt, res);
@@ -1134,7 +1133,7 @@ async function handle(req, res) {
         const key = r.text.slice(0, 60);
         if (!seen.has(key)) { seen.add(key); unique.push(r); }
       }
-      const topResults = unique.slice(0, 5);
+      const topResults = unique.slice(0, 3);
       if (topResults.length > 0) {
         ragContext = topResults.map((r, i) => `【古籍 ${i + 1}】《${r.book_name}》${r.chapter ? ' - ' + r.chapter : ''}
 ${r.text}`).join('\n\n');
@@ -1155,9 +1154,9 @@ ${r.text}`).join('\n\n');
     });
 
     try {
-      if (ragSources.length > 0) {
-        res.write('\u{1F4DA} **参考古籍**：' + ragSources.map(s => '《' + s + '》').join('、') + '\n\n');
-      }
+      // 参考古籍通过 header 传给前端，不在流前输出（避免用户误以为卡住）
+      const ragHeader = ragSources.length > 0 ? ragSources.join('|') : '';
+      res.setHeader('X-Rag-Sources', ragHeader);
       // 先估算输入 token
       const inputTokens = estimateTokens(prompt);
       const outputText = await streamDeepSeekLiuyao(prompt, res);
@@ -1970,7 +1969,7 @@ async function streamDeepSeek(prompt, res) {
       { role: 'user', content: prompt },
     ],
     stream: true,
-    max_tokens: 2000,
+    max_tokens: 3000,
     temperature: 0.7,
   });
 
@@ -2140,7 +2139,7 @@ async function streamDeepSeekLiuyao(prompt, res) {
       { role: 'user', content: prompt },
     ],
     stream: true,
-    max_tokens: 2000,
+    max_tokens: 3000,
   });
 
   let fullText = '';
