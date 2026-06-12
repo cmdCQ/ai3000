@@ -494,20 +494,23 @@ function buildPalaceTable() {
     // 纯卦(八纯)
     addToTable(t, pure, 'pure', 6, 3);
     
-    // 一世到五世
+    // 一世到五世（从初爻开始往上变；pure排列为 [初(u),中(u),上(u),初(l),中(l),上(l)]）
+    // hex爻位: [四爻,五爻,上爻,初爻,二爻,三爻]
+    // 故初爻≡pure[3], 二爻≡pure[4], 三爻≡pure[5], 四爻≡pure[0], 五爻≡pure[1]
     for (var g = 1; g <= 5; g++) {
       var lines = pure.slice();
       for (var i = 0; i < g; i++) {
-        lines[5-i] = 1 - lines[5-i]; // 从下往上变
+        lines[(3+i)%6] = 1 - lines[(3+i)%6]; // 从初爻开始往上变
       }
       addToTable(t, lines, g+'世', g, g<=3?g+3:g-3);
     }
     
-    // 游魂: 变初二三四处, 四处变回
+    // 游魂: 变初二三、五爻（四爻不变）
     var you = pure.slice();
     for (var i = 0; i < 5; i++) {
-      if (i !== 2) { // skip 四爻(index 2), keep changed
-        you[5-i] = 1 - you[5-i];
+      var idx = (3+i)%6;
+      if (idx !== 0) { // skip 四爻(pure[0]), keep changed
+        you[idx] = 1 - you[idx];
       }
     }
     addToTable(t, you, '游魂', 4, 1);
@@ -551,8 +554,8 @@ function getYaoInfo(upper, lower) {
   var lowerDi = NAJIA[lower].dizhi;
   var upperWx = NAJIA[upper].wuxing;
   var lowerWx = NAJIA[lower].wuxing;
-  var allDizhi = [upperDi[0],upperDi[1],upperDi[2],lowerDi[0],lowerDi[1],lowerDi[2]];
-  var allWuxing = [upperWx[0],upperWx[1],upperWx[2],lowerWx[0],lowerWx[1],lowerWx[2]];
+  var allDizhi = [upperDi[0],upperDi[1],upperDi[2],lowerDi[3],lowerDi[4],lowerDi[5]];
+  var allWuxing = [upperWx[0],upperWx[1],upperWx[2],lowerWx[3],lowerWx[4],lowerWx[5]];
   for (var i = 0; i < 6; i++) {
     info.push({ dizhi:allDizhi[i], wuxing:allWuxing[i], yang:lines[i]===1 });
   }
@@ -640,7 +643,7 @@ function renderHexDuo(benGua, bianGua) {
       var ch=isBen&&lines[yi]!==b2[yi];
       var xo=ch?(yang?'0→':'X→'):'',xc=ch?(yang?'o':'x'):'';
       h+='<tr class="hr">';
-      if(isBen){h+='<td class="h-ls">'+ls(dg,yi)+'</td>';}
+      if(isBen){h+='<td class="h-ls">'+ls(dg,ri)+'</td>';}
       else{h+='<td class="h-sp"></td>';}
       h+='<td class="h-lq">'+lq+'</td>';
       h+='<td class="h-dz">'+yy.dizhi+yy.wuxing+'</td>';
