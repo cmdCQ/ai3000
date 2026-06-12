@@ -407,7 +407,7 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
   </div>
 </div>
 
-<script src="/js/auth.js?v=5"></script>
+<script src="/js/auth.js?v=6"></script>
 <script src="/js/hexagrams_data.js?v=1"></script>
 <script>
 // ===== 八卦数据 =====
@@ -628,7 +628,7 @@ function renderHexDuo(benGua, bianGua) {
   var dg=getDayGanFromGZ((g&&g.lunarInfo&&g.lunarInfo.dayGZ)||'');
   var gs=getGuaShen(u1,l1,p1.shi);
   var bl=guaToLines(u1,l1),b2=guaToLines(u2,l2);
-  var ord=[5,4,3,2,1,0];
+  var ord=[0,1,2,3,4,5];
   function q(pe,wx){if(pe===wx)return'兄弟';var s={木:'火',火:'土',土:'金',金:'水',水:'木'},k={木:'土',土:'水',水:'火',火:'金',金:'木'};
     if(s[wx]===pe)return'父母';if(s[pe]===wx)return'子孙';if(k[pe]===wx)return'妻财';if(k[wx]===pe)return'官鬼';return'';}
   function ls(dg,yi){var a=['青龙','朱雀','勾陈','螣蛇','白虎','玄武'];
@@ -643,7 +643,7 @@ function renderHexDuo(benGua, bianGua) {
       var ch=isBen&&lines[yi]!==b2[yi];
       var xo=ch?(yang?'0→':'X→'):'',xc=ch?(yang?'o':'x'):'';
       h+='<tr class="hr">';
-      if(isBen){h+='<td class="h-ls">'+ls(dg,ri)+'</td>';}
+      if(isBen){h+='<td class="h-ls">'+ls(dg,5-ri)+'</td>';}
       else{h+='<td class="h-sp"></td>';}
       h+='<td class="h-lq">'+lq+'</td>';
       h+='<td class="h-dz">'+yy.dizhi+yy.wuxing+'</td>';
