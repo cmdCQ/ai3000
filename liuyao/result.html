@@ -577,17 +577,6 @@ function getDayGanFromGZ(gz) {
   return gz.charAt(0);
 }
 
-// ===== 直接计算今日天干（兜底，防止 lunarInfo 未传入）=====
-function computeTodayDayGan() {
-  // 参考点：2024-02-10 = 甲子日（天干索引0=甲）
-  var ref = new Date(2024, 1, 10); // month 0-indexed
-  var today = new Date();
-  var days = Math.round((today - ref) / 86400000);
-  var idx = ((days % 10) + 10) % 10;
-  var stems = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  return stems[idx];
-}
-
 // ===== 渲染六爻结果 =====
 function renderLines(lines) {
   var h = '<div class="yao-display">';
@@ -628,7 +617,7 @@ function renderHexDuo(benGua, bianGua) {
   var u1=benGua.upper,l1=benGua.lower,u2=bianGua.upper,l2=bianGua.lower;
   var p1=getPalaceInfo(u1,l1),p2=getPalaceInfo(u2,l2);
   var y1=getYaoInfo(u1,l1),y2=getYaoInfo(u2,l2);
-  var dg=getDayGanFromGZ((g&&g.lunarInfo&&g.lunarInfo.dayGZ)||'') || computeTodayDayGan();
+  var dg=getDayGanFromGZ((g&&g.lunarInfo&&g.lunarInfo.dayGZ)||'');
   var gs=getGuaShen(u1,l1,p1.shi);
   var bl=guaToLines(u1,l1),b2=guaToLines(u2,l2);
   var ord=[0,1,2,3,4,5];
