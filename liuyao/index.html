@@ -350,7 +350,7 @@ html,body { background:var(--bg); color:var(--text); font-family:var(--sans); mi
 </div>
 
 <script src="/js/lunar.min.js"></script>
-<script src="/js/auth.js?v=5"></script>
+<script src="/js/auth.js?v=6"></script>
 <script>
 // ===== 八卦数据 =====
 var TRIGRAMS = {
@@ -402,20 +402,22 @@ function guaToLines(upper,lower) {
   // 上卦在上 下卦在下: [上爻,五爻,四爻,三爻,二爻,初爻]
   return [up[2],up[1],up[0],lo[2],lo[1],lo[0]];
 }
-function buildLines(upper,lower,movingPos) {
+function buildLines(upper,lower,movingPositions) {
   var lines=guaToLines(upper,lower), r=[];
-  for(var i=0;i<6;i++) r.push({yang:lines[i]===1,moving:(6-i)===movingPos,pos:6-i});
+  if (typeof movingPositions === 'number') movingPositions = [movingPositions];
+  for(var i=0;i<6;i++) r.push({yang:lines[i]===1,moving:movingPositions.indexOf(6-i)!==-1,pos:6-i});
   return r;
 }
 
-function calcGua(upperNum, lowerNum, moveNum) {
+function calcGua(upperNum, lowerNum, moveNums) {
+  if (typeof moveNums === 'number') moveNums = [moveNums];
   var uTri=TRIGRAMS[upperNum], lTri=TRIGRAMS[lowerNum];
   var hexName=HEX64[upperNum+'_'+lowerNum];
   var benGua={
     upper:upperNum, lower:lowerNum,
     upperTri:uTri, lowerTri:lTri,
     name:hexName,
-    lines:buildLines(upperNum,lowerNum,moveNum)
+    lines:buildLines(upperNum,lowerNum,moveNums)
   };
   var benLines=guaToLines(upperNum,lowerNum);
   // benLines顺序: [上爻(6),五爻(5),四爻(4),三爻(3),二爻(2),初爻(1)]
@@ -430,7 +432,10 @@ function calcGua(upperNum, lowerNum, moveNum) {
   };
   var changedLines=benLines.slice();
   // benLines[0]=上爻(6)...benLines[5]=初爻(1), moveNum 1-6 → index 6-moveNum
-  changedLines[6-moveNum]=changedLines[6-moveNum]===1?0:1;
+  for (var mi = 0; mi < moveNums.length; mi++) {
+    var idx = 6 - moveNums[mi];
+    changedLines[idx] = changedLines[idx] === 1 ? 0 : 1;
+  }
   // linesToTri 期望 [bottom,mid,top]
   var bianUpperNum=linesToTri([changedLines[2],changedLines[1],changedLines[0]]);
   var bianLowerNum=linesToTri([changedLines[5],changedLines[4],changedLines[3]]);
@@ -441,7 +446,8 @@ function calcGua(upperNum, lowerNum, moveNum) {
     lines:buildLines(bianUpperNum,bianLowerNum,0)
   };
   var tiNum, yongNum;
-  if(moveNum<=3){ tiNum=upperNum; yongNum=lowerNum; }
+  var firstMove = moveNums.length > 0 ? moveNums[0] : 0;
+  if(firstMove<=3){ tiNum=upperNum; yongNum=lowerNum; }
   else{ tiNum=lowerNum; yongNum=upperNum; }
   var tiTri=TRIGRAMS[tiNum], yongTri=TRIGRAMS[yongNum];
   var relation=wuxingShengKe(tiTri.element, yongTri.element);
@@ -464,7 +470,7 @@ function calcGua(upperNum, lowerNum, moveNum) {
   var zongLowerNum=linesToTri([zongLines[5],zongLines[4],zongLines[3]]);
   var zongGua={upper:zongUpperNum,lower:zongLowerNum,upperTri:TRIGRAMS[zongUpperNum],lowerTri:TRIGRAMS[zongLowerNum],name:HEX64[zongUpperNum+'_'+zongLowerNum],lines:buildLines(zongUpperNum,zongLowerNum,0)};
   return {
-    upper:upperNum, lower:lowerNum, move:moveNum,
+    upper:upperNum, lower:lowerNum, moveNums:moveNums,
     benGua:benGua, huGua:huGua, bianGua:bianGua,
     cuoGua:cuoGua, zongGua:zongGua,
     ti:{num:tiNum,tri:tiTri}, yong:{num:yongNum,tri:yongTri},
@@ -726,10 +732,9 @@ function coinDivination() {
   // 动爻
   var movePos = [];
   for (var i = 0; i < 6; i++) {
-    if (lines[i].changing) movePos.push(6-i);
+    if (lines[i].changing) movePos.push(i+1);
   }
-  var mainMove = movePos.length > 0 ? movePos[0] : (Math.floor(Math.random()*6)+1);
-  var gua = calcGua(upperNum, lowerNum, mainMove);
+  var gua = calcGua(upperNum, lowerNum, movePos.slice());
   gua.coinLines = lines.slice();
   gua.movePositions = movePos;
   return { method:'coin', coinLines:lines.slice(), gua:gua };
@@ -752,13 +757,12 @@ function manualDivination() {
   var upperNum = linesToTri(upperYangs);
   var movePos = [];
   for (var i = 0; i < 6; i++) {
-    if (lines[i].changing) movePos.push(6 - i);
+    if (lines[i].changing) movePos.push(i + 1);
   }
-  var mainMove = movePos.length > 0 ? movePos[0] : (Math.floor(Math.random()*6)+1);
-  var gua = calcGua(upperNum, lowerNum, mainMove);
+  var gua = calcGua(upperNum, lowerNum, movePos.slice());
   gua.coinLines = lines.slice();
   gua.movePositions = movePos;
-  return { method:'manual', lines:lines.slice(), gua:gua };
+  return { method:'manual', coinLines:lines.slice(), gua:gua };
 }
 
 function autoDivination() {
@@ -779,10 +783,9 @@ function autoDivination() {
   var upperNum = linesToTri(upperYangs);
   var movePos = [];
   for (var i = 0; i < 6; i++) {
-    if (lines[i].changing) movePos.push(6-i);
+    if (lines[i].changing) movePos.push(i+1);
   }
-  var mainMove = movePos.length > 0 ? movePos[0] : Math.floor(Math.random()*6)+1;
-  var gua = calcGua(upperNum, lowerNum, mainMove);
+  var gua = calcGua(upperNum, lowerNum, movePos.slice());
   gua.coinLines = lines.slice();
   gua.movePositions = movePos;
   return { method:'auto', coinLines:lines.slice(), gua:gua };
@@ -958,7 +961,7 @@ async function startDivination(e) {
   // 事项为空 → 临时排盘，不保存记录
   if (!topic) {
     localStorage.setItem('liuyao_result', JSON.stringify(result));
-    window.location.href = '/liuyao/result.html';
+    window.location.href = '/liuyao/result.html?v=2';
     return;
   }
 
@@ -976,13 +979,13 @@ async function startDivination(e) {
     });
     var saved = await resp.json();
     if (resp.ok) {
-      window.location.href = '/liuyao/result.html?id=' + saved.id;
+      window.location.href = '/liuyao/result.html?v=2&id=' + saved.id;
     } else {
-      window.location.href = '/liuyao/result.html';
+      window.location.href = '/liuyao/result.html?v=2';
     }
   } catch(e) {
     localStorage.setItem('liuyao_result', JSON.stringify(result));
-    window.location.href = '/liuyao/result.html';
+    window.location.href = '/liuyao/result.html?v=2';
   }
 }
 
