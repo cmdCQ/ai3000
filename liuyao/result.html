@@ -617,7 +617,7 @@ function renderHexDuo(benGua, bianGua) {
   var u1=benGua.upper,l1=benGua.lower,u2=bianGua.upper,l2=bianGua.lower;
   var p1=getPalaceInfo(u1,l1),p2=getPalaceInfo(u2,l2);
   var y1=getYaoInfo(u1,l1),y2=getYaoInfo(u2,l2);
-  var dg=getDayGanFromGZ((g&&g.lunarInfo&&g.lunarInfo.dayGZ)||'');
+  var dg=getDayGanFromGZ((g&&g.dayGZ)||'');
   var gs=getGuaShen(u1,l1,p1.shi);
   var bl=guaToLines(u1,l1),b2=guaToLines(u2,l2);
   var ord=[0,1,2,3,4,5];
@@ -703,6 +703,8 @@ function renderResult(result) {
   var li = result.lunarInfo || {};
   if (li.lunarMonth && li.lunarDay) h += '<tr><td class="td-label">农历</td><td class="td-value">'+li.lunarMonth+'月'+li.lunarDay+'</td></tr>';
   if (li.jieQiFull) h += '<tr><td class="td-label">节气</td><td class="td-value" style="font-size:0.75rem;line-height:1.5">'+escHtml(li.jieQiFull)+'</td></tr>';
+  // 保存日天干到全局g，供六神计算用
+  if (g) g.dayGZ = li.dayGZ || '';
   if (li.yearGZ) {
     h += '<tr><td class="td-label" style="text-align:center">干支<br><span style="font-size:0.65rem;color:#999;font-weight:400">空亡</span></td><td class="td-value" style="padding:0.3rem 0"><table style="width:100%;border-collapse:collapse"><tr>';
     h += '<td class="td-sub">'+escHtml(li.yearGZ)+'<br><span style="font-size:0.65rem;color:#999">'+escHtml(li.xkYear||'')+'</span></td>';
